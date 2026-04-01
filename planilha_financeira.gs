@@ -177,10 +177,13 @@ function criarPlanilhaFinanceira() {
 
   const ok = ui.alert(
     `Criar planilha completa — ${ANO}`,
-    `O que será feito:\n• ${aviso}\n• Cada aba terá resumo, budget e log de transações.\n\nContinuar?`,
+    `O que será feito:\n• ${aviso}\n• Locale configurado para pt_BR (datas dd/mm/aaaa, moeda R$, vírgula decimal).\n• Cada aba terá resumo, budget e log de transações.\n\nContinuar?`,
     ui.ButtonSet.YES_NO
   );
   if (ok !== ui.Button.YES) return;
+
+  try { ss.setSpreadsheetLocale('pt_BR'); } catch (e) {}
+  try { ss.setSpreadsheetTimeZone('America/Sao_Paulo'); } catch (e) {}
 
   MESES.forEach(({ nome, abrev }) => {
     montarAbaMensal(getOrCreateSheet(ss, `${abrev}/${ANO}`), nome, ANO);
@@ -560,7 +563,7 @@ function montarAbaMensal(sheet, mesNome, ano) {
   sheet.getRange(45, 1, 1, 4).setBackground(COR.pjTotal);
   sheet.getRange(45, 1).setValue('SALDO PJ').setFontWeight('bold');
   sheet.getRange(45, 3)
-    .setFormula(`=SUMIF($E:$E,"${TAG.pjFat}",$C:$C)-SUMIF($E:$E,"${TAG.pjCusto}",$C:$C)`)
+    .setFormula(`=SUMIF($E:$E;"${TAG.pjFat}";$C:$C)-SUMIF($E:$E;"${TAG.pjCusto}";$C:$C)`)
     .setFontWeight('bold').setNumberFormat(FMT_BRL);
   formatacaoDiferenca(sheet, 'C45:C45');
 
@@ -569,7 +572,7 @@ function montarAbaMensal(sheet, mesNome, ano) {
 
   // linha 48 — aportado: do log, tag IA (subtraído no Saldo do Mês)
   linhaItem(sheet, 48, 'Aportado no mês', TAG.invAporte, null,
-    `=SUMIF($C$${LOG_ROW}:$C,"Aporte",$D$${LOG_ROW}:$D)`, null);
+    `=SUMIF($C$${LOG_ROW}:$C;"Aporte";$D$${LOG_ROW}:$D)`, null);
 
   // linha 49 — rendimento: entrada manual, verde=ganho / vermelho=perda
   sheet.getRange(49, 1).setValue('Rendimento do mês');
@@ -589,7 +592,7 @@ function montarAbaMensal(sheet, mesNome, ano) {
   sheet.getRange(55, 1, 1, 4).setBackground(COR.total);
   sheet.getRange(55, 1).setValue('TOTAL PATRIMÔNIO').setFontWeight('bold');
   sheet.getRange(55, 3)
-    .setFormula(`=SUMIF($E:$E,"${TAG.pat}",$C:$C)`)
+    .setFormula(`=SUMIF($E:$E;"${TAG.pat}";$C:$C)`)
     .setFontWeight('bold').setNumberFormat(FMT_BRL);
 
   // ── SALDO DO MÊS ───────────────────────────────────────────────────────────
@@ -599,10 +602,10 @@ function montarAbaMensal(sheet, mesNome, ano) {
     .setFontColor(COR.saldoFonte).setFontWeight('bold').setFontSize(12);
   sheet.getRange(57, 3)
     .setFormula(
-      `=SUMIF($E:$E,"${TAG.entrada}",$C:$C)` +
-      `-SUMIF($E:$E,"${TAG.fixo}",$C:$C)` +
-      `-SUMIF($E:$E,"${TAG.variavel}",$C:$C)` +
-      `-SUMIF($E:$E,"${TAG.invAporte}",$C:$C)`
+      `=SUMIF($E:$E;"${TAG.entrada}";$C:$C)` +
+      `-SUMIF($E:$E;"${TAG.fixo}";$C:$C)` +
+      `-SUMIF($E:$E;"${TAG.variavel}";$C:$C)` +
+      `-SUMIF($E:$E;"${TAG.invAporte}";$C:$C)`
     )
     .setFontColor(COR.saldoFonte).setFontWeight('bold').setFontSize(12)
     .setNumberFormat(FMT_BRL);
@@ -621,7 +624,7 @@ function montarAbaMensal(sheet, mesNome, ano) {
   sheet.getRange(posEnd + 1, 1, 1, 4).setBackground(COR.total);
   sheet.getRange(posEnd + 1, 1).setValue('TOTAL ATIVOS FINANCEIROS').setFontWeight('bold');
   sheet.getRange(posEnd + 1, 3)
-    .setFormula(`=SUMIF($E:$E,"${TAG.posFinanceira}",$C:$C)`)
+    .setFormula(`=SUMIF($E:$E;"${TAG.posFinanceira}";$C:$C)`)
     .setFontWeight('bold').setNumberFormat(FMT_BRL);
 
   // ── LOG DE TRANSAÇÕES ──────────────────────────────────────────────────────
@@ -703,7 +706,7 @@ function criarDashboard(ss) {
   MESES.forEach(({ abrev }, idx) => {
     const row = idx + 3;
     const aba = `${abrev}/${ANO}`;
-    const s   = (tag, col) => `SUMIF('${aba}'!E:E,"${tag}",'${aba}'!${col}:${col})`;
+    const s   = (tag, col) => `SUMIF('${aba}'!E:E;"${tag}";'${aba}'!${col}:${col})`;
 
     sheet.getRange(row, 1).setValue(abrev);
     sheet.getRange(row, 2).setFormula(`=${s(TAG.entrada,'C')}`);
@@ -744,11 +747,11 @@ function montarSecaoGastos(sheet, cabRow, titulo, startRow, itens, tag, totalRow
   cabecalhoSecao(sheet, cabRow, titulo, COR.secao, COR.secaoFonte, ['', 'Budget', 'Real', 'Diferença']);
   itens.forEach((cat, i) => {
     const row = startRow + i;
-    linhaItem(sheet, row, cat, tag, null, sumifCategoria(row), `=IF(B${row}="","",B${row}-C${row})`);
+    linhaItem(sheet, row, cat, tag, null, sumifCategoria(row), `=IF(B${row}="";"";B${row}-C${row})`);
     sheet.getRange(row, 2).setNumberFormat(FMT_BRL);
   });
   linhaTotalSecao(sheet, totalRow, labelTotal, tag,
-    `=SUMIF($E:$E,"${tag}",$B:$B)-SUMIF($E:$E,"${tag}",$C:$C)`, true);
+    `=SUMIF($E:$E;"${tag}";$B:$B)-SUMIF($E:$E;"${tag}";$C:$C)`, true);
 }
 
 function linhaItem(sheet, row, label, tag, budgetFormula, realFormula, diffFormula) {
@@ -765,11 +768,11 @@ function linhaTotalSecao(sheet, row, label, tag, diffFormula, showBudget) {
   sheet.getRange(row, 1).setValue(label).setFontWeight('bold');
   if (showBudget) {
     sheet.getRange(row, 2)
-      .setFormula(`=SUMIF($E:$E,"${tag}",$B:$B)`)
+      .setFormula(`=SUMIF($E:$E;"${tag}";$B:$B)`)
       .setFontWeight('bold').setNumberFormat(FMT_BRL);
   }
   sheet.getRange(row, 3)
-    .setFormula(`=SUMIF($E:$E,"${tag}",$C:$C)`)
+    .setFormula(`=SUMIF($E:$E;"${tag}";$C:$C)`)
     .setFontWeight('bold').setNumberFormat(FMT_BRL);
   if (diffFormula) {
     sheet.getRange(row, 4).setFormula(diffFormula).setFontWeight('bold').setNumberFormat(FMT_BRL);
@@ -778,7 +781,7 @@ function linhaTotalSecao(sheet, row, label, tag, diffFormula, showBudget) {
 
 // Retorna a fórmula SUMIF que busca a categoria do log pelo label da linha
 function sumifCategoria(row) {
-  return `=SUMIF($C$${LOG_ROW}:$C,A${row},$D$${LOG_ROW}:$D)`;
+  return `=SUMIF($C$${LOG_ROW}:$C;A${row};$D$${LOG_ROW}:$D)`;
 }
 
 // Tag de seção na coluna E — texto branco sobre fundo branco (invisível ao usuário)

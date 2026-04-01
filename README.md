@@ -13,7 +13,7 @@ Sem dependências externas — funciona 100% dentro do Google Sheets.
 - **Estrutura flexível**: adicionar ou remover linhas em qualquer seção não quebra os cálculos (baseado em SUMIF + tags, não em intervalos fixos)
 - **Células protegidas**: fórmulas ficam em cinza e exibem aviso se editadas acidentalmente
 - **Seletor de data** no log de transações
-- **Formato pt_BR**: datas no formato dd/mm/aaaa, valores em R$ (veja nota abaixo sobre locale)
+- **Locale pt_BR**: datas no formato dd/mm/aaaa, valores em R$, separador decimal vírgula
 - **Menu "Financeiro"** com 9 ações úteis
 
 ## Configuração inicial
@@ -86,13 +86,13 @@ O Dashboard existente é arquivado automaticamente como "Dashboard 2026" e um no
 
 ## Locale e formatação de números
 
-O script define os formatos de data (`dd/mm/aaaa`) e moeda (`R$`) diretamente via código — eles funcionam com qualquer locale.
+O script configura automaticamente o locale da planilha para **pt_BR** ao rodar "Criar planilha completa". Isso garante:
 
-No entanto, o **separador decimal** (vírgula no padrão BR: `1.234,56`) depende do locale da planilha. Para isso, é necessário deixar o locale como **Estados Unidos** na planilha, pois o script usa `setFormula()` com sintaxe en_US (vírgula como separador de argumentos). Se a planilha estiver em pt_BR, o Google Sheets espera ponto-e-vírgula nos argumentos e as fórmulas quebram.
+- Datas no formato `dd/mm/aaaa`
+- Moeda com símbolo `R$`
+- Separador decimal vírgula (`1.234,56`)
 
-**Recomendação:** mantenha o locale da planilha como **Estados Unidos** (padrão do Google Sheets). Os valores aparecerão como `R$ 1,234.56` — o `R$` é aplicado pelo script, apenas o separador decimal segue o padrão americano.
-
-> Se o separador decimal for essencial para você, a solução definitiva seria reescrever todas as fórmulas do script usando ponto-e-vírgula como separador de argumentos (ex: `=SUMIF(A:A;"E";C:C)`). O script atual usa vírgulas por ser o padrão da API do GAS.
+Todas as fórmulas do script usam **ponto-e-vírgula** como separador de argumentos (padrão pt_BR), por exemplo: `=SUMIF($E:$E;"E";$C:$C)`. Isso é compatível com qualquer planilha em locale brasileiro.
 
 ## Contexto fiscal (PJ Lucro Presumido)
 
