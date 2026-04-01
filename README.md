@@ -41,7 +41,7 @@ Sem dependências externas — funciona 100% dentro do Google Sheets.
 
 ## Como preencher
 
-### Diariamente — Log de transações (linha 72 em diante)
+### Diariamente — Log de transações (seção no final da aba)
 - **Coluna A** — Data (seletor de data disponível)
 - **Coluna B** — Descrição
 - **Coluna C** — Categoria (dropdown)
@@ -54,9 +54,9 @@ A categoria selecionada direciona o valor automaticamente para a seção correta
 - Use **Financeiro > Copiar budget do mês anterior** para reaproveitar os valores
 
 ### Valores manuais
-- **Posição Financeira** (linhas 4–8, coluna C): saldo em conta corrente, renda fixa, renda variável, cripto e outros ativos — atualize todo mês para acompanhar sua evolução
-- **Rendimento do mês** (linha 57, coluna C): ganho ou perda com investimentos no mês
-- **Patrimônio** (linhas 60–62, coluna C): valor atual de cada bem físico (imóvel, carro, etc.)
+- **Posição Financeira** (seção no topo, coluna C): saldo em conta corrente PF/PJ, renda fixa, renda variável, cripto e outros ativos — atualize todo mês para acompanhar sua evolução
+- **Rendimento do mês** (seção Investimentos, coluna C): ganho ou perda com investimentos no mês
+- **Patrimônio** (seção Patrimônio, coluna C): valor atual de cada bem físico (imóvel, carro, etc.)
 
 ### Células em cinza
 Contêm fórmulas automáticas — não edite. Um aviso de confirmação aparece se você tentar.
@@ -75,6 +75,8 @@ const CAT_FIXO = [   // Categorias de gastos fixos
 ```
 
 Após alterar categorias, execute **Financeiro > Atualizar dropdowns** para propagar a mudança.
+
+O layout das abas é calculado dinamicamente a partir dos arrays de categorias. Adicionar ou remover itens em qualquer array (ex: `CAT_FIXO`, `CAT_INVESTIMENTO`, `ITEMS_POS_FINANCEIRA`) ajusta automaticamente todas as posições de linha — basta recriar a planilha.
 
 ## Novo ano
 
