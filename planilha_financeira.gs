@@ -172,10 +172,6 @@ function criarPlanilhaFinanceira() {
   );
   if (ok !== ui.Button.YES) return;
 
-  // Locale brasileiro: datas dd/mm/aaaa, moeda R$, separador decimal vírgula
-  try { ss.setSpreadsheetLocale('pt_BR'); } catch (e) {}
-  try { ss.setSpreadsheetTimeZone('America/Sao_Paulo'); } catch (e) {}
-
   MESES.forEach(({ nome, abrev }) => {
     montarAbaMensal(getOrCreateSheet(ss, `${abrev}/${ANO}`), nome, ANO);
   });
@@ -189,6 +185,11 @@ function criarPlanilhaFinanceira() {
 
   const dash = ss.getSheetByName('Dashboard');
   if (dash) { ss.setActiveSheet(dash); ss.moveActiveSheet(1); }
+
+  // Locale configurado após todas as fórmulas (pt_BR usa ; como separador;
+  // definir antes quebraria os setFormula que usam sintaxe en_US com vírgulas)
+  try { ss.setSpreadsheetLocale('pt_BR'); } catch (e) {}
+  try { ss.setSpreadsheetTimeZone('America/Sao_Paulo'); } catch (e) {}
 
   SpreadsheetApp.flush();
   ui.alert('Planilha criada com sucesso!');
@@ -506,9 +507,6 @@ function montarAbaMensal(sheet, mesNome, ano) {
   sheet.setColumnWidth(3, 130);
   sheet.setColumnWidth(4, 130);
   sheet.setColumnWidth(5, 20);  // E — tag de seção (invisível)
-  sheet.setColumnWidth(6, 18);  // F — separador visual
-  sheet.setColumnWidth(7, 215); // G — legenda (col esquerda)
-  sheet.setColumnWidth(8, 155); // H — legenda (col direita)
 
   // ── Título ─────────────────────────────────────────────────────────────────
   sheet.setRowHeight(1, 42);
@@ -629,7 +627,6 @@ function montarAbaMensal(sheet, mesNome, ano) {
   );
 
   aplicarCinzaFormulas(sheet);
-  adicionarLegenda(sheet);
   aplicarProtecao(sheet);
 
   sheet.setFrozenRows(1);
