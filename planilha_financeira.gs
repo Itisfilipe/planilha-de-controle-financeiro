@@ -706,37 +706,6 @@ function montarAbaMensal(sheet, mesNome, ano) {
     SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(true).build()
   );
 
-  // ── GRÁFICO DONUT — Gastos por categoria ──────────────────────────────────
-  sheet.getCharts().forEach(c => sheet.removeChart(c));
-
-  // Montar dados para o gráfico: label + valor real (col C) de Fixos e Variáveis
-  const chartLabels = [...CAT_FIXO, ...CAT_VARIAVEL];
-  const chartRows   = [
-    ...CAT_FIXO.map((_, i)     => L.fixStart + i),
-    ...CAT_VARIAVEL.map((_, i) => L.varStart + i),
-  ];
-
-  // Escrever dados auxiliares na coluna G:H (fora da área visível principal)
-  sheet.setColumnWidth(7, 180);
-  sheet.setColumnWidth(8, 100);
-  sheet.getRange(L.fixHeader, 7).setValue('Categoria').setFontWeight('bold');
-  sheet.getRange(L.fixHeader, 8).setValue('Valor').setFontWeight('bold');
-  chartLabels.forEach((label, i) => {
-    const r = L.fixHeader + 1 + i;
-    sheet.getRange(r, 7).setValue(label);
-    sheet.getRange(r, 8).setFormula(`=C${chartRows[i]}`).setNumberFormat(FMT_BRL);
-  });
-
-  sheet.insertChart(sheet.newChart()
-    .setChartType(Charts.ChartType.PIE)
-    .addRange(sheet.getRange(L.fixHeader, 7, chartLabels.length + 1, 2))
-    .setPosition(3, 6, 20, 0)
-    .setOption('title', 'Gastos por Categoria')
-    .setOption('width', 480).setOption('height', 400)
-    .setOption('pieHole', 0.4)
-    .setOption('legend', { position: 'right', textStyle: { fontSize: 9 } })
-    .build());
-
   aplicarCinzaFormulas(sheet, L);
   aplicarProtecao(sheet, L);
 
