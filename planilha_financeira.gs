@@ -38,19 +38,29 @@ const MESES = [
   { nome: 'Dezembro',  abrev: 'Dez' },
 ];
 
-const LOG_ROW = 62; // Primeira linha de dados do log em cada aba mensal
+const LOG_ROW = 72; // Primeira linha de dados do log em cada aba mensal
 
 // Tags de seção — coluna E oculta. Totais usam SUMIF nessas tags:
 // inserir/remover linhas não quebra nada; basta copiar a tag da linha vizinha.
 const TAG = {
-  entrada:   'E',
-  fixo:      'F',
-  variavel:  'V',
-  pjFat:     'PJF',
-  pjCusto:   'PJC',
-  invAporte: 'IA',
-  pat:       'PAT',
+  entrada:      'E',
+  fixo:         'F',
+  variavel:     'V',
+  pjFat:        'PJF',
+  pjCusto:      'PJC',
+  invAporte:    'IA',
+  pat:          'PAT',
+  posFinanceira:'POS',
 };
+
+// Itens da seção Posição Financeira — valores manuais (snapshot do saldo atual)
+const ITEMS_POS_FINANCEIRA = [
+  'Conta corrente / Poupança',
+  'Renda Fixa (CDB, LCI, Tesouro)',
+  'Renda Variável (Ações, FIIs, ETFs)',
+  'Criptomoedas',
+  'Outros ativos financeiros',
+];
 
 const COR = {
   titulo:     '#1a1a2e',
@@ -74,8 +84,8 @@ const COR = {
 
 const FMT_BRL = 'R$ #,##0.00';
 
-// Colunas de dados no dashboard (exclui col 7 que é separador visual)
-const DASH_COLS = [2, 3, 4, 5, 6, 8, 9, 10];
+// Colunas de dados no dashboard (exclui cols 7 e 11 que são separadores visuais)
+const DASH_COLS = [2, 3, 4, 5, 6, 8, 9, 10, 12];
 
 // ─── CATEGORIAS ───────────────────────────────────────────────────────────────
 // Fonte única de verdade: os arrays de seção definem os nomes.
@@ -167,7 +177,7 @@ function criarPlanilhaFinanceira() {
 
   const ok = ui.alert(
     `Criar planilha completa — ${ANO}`,
-    `O que será feito:\n• ${aviso}\n• Locale configurado para pt_BR (datas e moeda no padrão brasileiro).\n• Cada aba terá resumo, budget e log de transações.\n\nContinuar?`,
+    `O que será feito:\n• ${aviso}\n• Cada aba terá resumo, budget e log de transações.\n\nContinuar?`,
     ui.ButtonSet.YES_NO
   );
   if (ok !== ui.Button.YES) return;
@@ -185,11 +195,6 @@ function criarPlanilhaFinanceira() {
 
   const dash = ss.getSheetByName('Dashboard');
   if (dash) { ss.setActiveSheet(dash); ss.moveActiveSheet(1); }
-
-  // Locale configurado após todas as fórmulas (pt_BR usa ; como separador;
-  // definir antes quebraria os setFormula que usam sintaxe en_US com vírgulas)
-  try { ss.setSpreadsheetLocale('pt_BR'); } catch (e) {}
-  try { ss.setSpreadsheetTimeZone('America/Sao_Paulo'); } catch (e) {}
 
   SpreadsheetApp.flush();
   ui.alert('Planilha criada com sucesso!');
@@ -404,21 +409,24 @@ function resumoMesAtual() {
   const pjFat     = sumif(TAG.pjFat);
   const pjCusto   = sumif(TAG.pjCusto);
   const saldoPJ   = pjFat - pjCusto;
+  const posTotal  = sumif(TAG.posFinanceira);
 
-  const linha = (label, valor) => `\n  ${label.padEnd(22)} ${fmt(valor)}`;
+  const linha = (label, valor) => `\n  ${label.padEnd(24)} ${fmt(valor)}`;
 
   ui.alert(
     `Resumo — ${nome}`,
-    '── PESSOAL (PF) ───────────────────────' +
-    linha('Entradas',        entradas)  +
-    linha('Gastos Fixos',    fixos)     +
-    linha('Gastos Variáveis',variaveis) +
-    linha('Aportes',         aportes)   +
-    linha('SALDO DO MÊS',   saldoPF)   +
-    '\n\n── PJ / CNPJ ──────────────────────────' +
-    linha('Faturamento PJ',  pjFat)     +
-    linha('Custos PJ',       pjCusto)   +
-    linha('SALDO PJ',        saldoPJ),
+    '── PESSOAL (PF) ─────────────────────────' +
+    linha('Entradas',         entradas)  +
+    linha('Gastos Fixos',     fixos)     +
+    linha('Gastos Variáveis', variaveis) +
+    linha('Aportes',          aportes)   +
+    linha('SALDO DO MÊS',    saldoPF)   +
+    '\n\n── PJ / CNPJ ────────────────────────────' +
+    linha('Faturamento PJ',   pjFat)     +
+    linha('Custos PJ',        pjCusto)   +
+    linha('SALDO PJ',         saldoPJ)   +
+    '\n\n── POSIÇÃO FINANCEIRA ───────────────────' +
+    linha('Total ativos financeiros', posTotal),
     ui.ButtonSet.OK
   );
 }
@@ -459,7 +467,9 @@ function mostrarInstrucoes() {
     '  • Use "Copiar budget do mês anterior" para reaproveitar os valores.\n\n' +
     'VALORES MANUAIS\n' +
     '  • Rendimento do mês (linha 49): ganho ou perda de investimentos.\n' +
-    '  • Patrimônio (linhas 52–54): atualize o valor atual de cada bem.\n\n' +
+    '  • Patrimônio (linhas 52–54): valor atual de cada bem físico.\n' +
+    '  • Posição Financeira (linhas 60–64): saldo em conta, investimentos,\n' +
+    '    renda fixa/variável, cripto — atualize todo mês para acompanhar.\n\n' +
     'CÉLULAS EM CINZA\n' +
     '  • Contêm fórmulas automáticas — não edite.\n' +
     '  • Um aviso aparecerá se você tentar editar uma dessas células.\n\n' +
@@ -496,9 +506,12 @@ function mostrarInstrucoes() {
  *  52–54    — bens
  *  55       — TOTAL PATRIMÔNIO
  *  57       — SALDO DO MÊS
- *  60       — LOG (título)
- *  61       — LOG (cabeçalhos)
- *  62+      — LOG (dados) → LOG_ROW = 62
+ *  59       — POSIÇÃO FINANCEIRA  tag: POS
+ *  60–64    — itens (ITEMS_POS_FINANCEIRA)
+ *  65       — TOTAL ATIVOS FINANCEIROS
+ *  70       — LOG (título)        → LOG_ROW - 2
+ *  71       — LOG (cabeçalhos)    → LOG_ROW - 1
+ *  72+      — LOG (dados)         → LOG_ROW = 72
  */
 function montarAbaMensal(sheet, mesNome, ano) {
   sheet.setConditionalFormatRules([]);
@@ -595,6 +608,22 @@ function montarAbaMensal(sheet, mesNome, ano) {
     .setNumberFormat(FMT_BRL);
   formatacaoDiferenca(sheet, 'C57:C57');
 
+  // ── POSIÇÃO FINANCEIRA ─────────────────────────────────────────────────────
+  cabecalhoSecao(sheet, 59, 'POSIÇÃO FINANCEIRA', COR.secao, COR.secaoFonte, ['', '', 'Saldo atual', '']);
+
+  ITEMS_POS_FINANCEIRA.forEach((item, i) => {
+    const row = 60 + i;
+    linhaItem(sheet, row, item, TAG.posFinanceira, null, null, null);
+    sheet.getRange(row, 3).setNumberFormat(FMT_BRL);
+  });
+
+  const posEnd = 59 + ITEMS_POS_FINANCEIRA.length; // row 64
+  sheet.getRange(posEnd + 1, 1, 1, 4).setBackground(COR.total);
+  sheet.getRange(posEnd + 1, 1).setValue('TOTAL ATIVOS FINANCEIROS').setFontWeight('bold');
+  sheet.getRange(posEnd + 1, 3)
+    .setFormula(`=SUMIF($E:$E,"${TAG.posFinanceira}",$C:$C)`)
+    .setFontWeight('bold').setNumberFormat(FMT_BRL);
+
   // ── LOG DE TRANSAÇÕES ──────────────────────────────────────────────────────
   sheet.setRowHeight(LOG_ROW - 2, 32);
   sheet.getRange(LOG_ROW - 2, 1, 1, 4).merge()
@@ -652,10 +681,10 @@ function criarDashboard(ss) {
     sheet = ss.insertSheet('Dashboard');
   }
 
-  [80, 140, 130, 140, 120, 140, 20, 150, 150, 140].forEach((w, i) => sheet.setColumnWidth(i + 1, w));
+  [80, 140, 130, 140, 120, 140, 20, 150, 150, 140, 20, 170].forEach((w, i) => sheet.setColumnWidth(i + 1, w));
 
   sheet.setRowHeight(1, 48);
-  sheet.getRange(1, 1, 1, 10).merge()
+  sheet.getRange(1, 1, 1, 12).merge()
     .setValue(`DASHBOARD — ${ANO}`)
     .setBackground(COR.titulo).setFontColor(COR.tituloFonte)
     .setFontWeight('bold').setFontSize(14)
@@ -663,7 +692,7 @@ function criarDashboard(ss) {
 
   sheet.setRowHeight(2, 30);
   ['Mês', 'Entradas PF', 'Gastos Fixos', 'Gastos Variáveis', 'Aportes', 'Saldo PF',
-   '', 'Faturamento PJ', 'Custos PJ', 'Saldo PJ'].forEach((h, i) => {
+   '', 'Faturamento PJ', 'Custos PJ', 'Saldo PJ', '', 'Ativos Financeiros'].forEach((h, i) => {
     sheet.getRange(2, i + 1)
       .setValue(h)
       .setBackground(COR.secao).setFontColor(COR.secaoFonte)
@@ -686,9 +715,10 @@ function criarDashboard(ss) {
     sheet.getRange(row, 8).setFormula(`=${s(TAG.pjFat,'C')}`);
     sheet.getRange(row, 9).setFormula(`=${s(TAG.pjCusto,'C')}`);
     sheet.getRange(row, 10).setFormula(`=${s(TAG.pjFat,'C')}-${s(TAG.pjCusto,'C')}`);
+    sheet.getRange(row, 12).setFormula(`=${s(TAG.posFinanceira,'C')}`);
 
     DASH_COLS.forEach(col => sheet.getRange(row, col).setNumberFormat(FMT_BRL));
-    sheet.getRange(row, 1, 1, 10).setBackground(idx % 2 === 0 ? '#f7f9fc' : '#ffffff');
+    sheet.getRange(row, 1, 1, 12).setBackground(idx % 2 === 0 ? '#f7f9fc' : '#ffffff');
   });
 
   const totalRow = 3 + MESES.length;
@@ -699,7 +729,7 @@ function criarDashboard(ss) {
       .setFormula(`=SUM(${letra}3:${letra}${totalRow - 1})`)
       .setNumberFormat(FMT_BRL).setFontWeight('bold');
   });
-  sheet.getRange(totalRow, 1, 1, 10).setBackground('#e8ecf0').setFontWeight('bold');
+  sheet.getRange(totalRow, 1, 1, 12).setBackground('#e8ecf0').setFontWeight('bold');
 
   formatacaoDiferenca(sheet, `F3:F${totalRow}`);
   formatacaoDiferenca(sheet, `J3:J${totalRow}`);
@@ -808,6 +838,8 @@ function aplicarCinzaFormulas(sheet) {
   const varEnd      = 22 + CAT_VARIAVEL.length;  // 30
   const pjCustoEnd  = 34 + CAT_PJ_CUSTO.length;  // 44
 
+  const posEnd = 59 + ITEMS_POS_FINANCEIRA.length; // 64
+
   // Labels (col A) — alimentam SUMIF; renomear quebraria os cálculos
   [
     `A4:A${entradasEnd}`,
@@ -815,6 +847,7 @@ function aplicarCinzaFormulas(sheet) {
     `A23:A${varEnd}`,
     `A34:A${pjCustoEnd}`,
     'A48', 'A49', 'A52:A54',
+    `A60:A${posEnd}`,
   ].forEach(r => sheet.getRange(r).setBackground(g));
 
   // Fórmulas SUMIF (col C) — calculadas automaticamente a partir do log
@@ -845,12 +878,15 @@ function aplicarProtecao(sheet) {
   const protection = sheet.protect()
     .setDescription('Esta célula contém uma fórmula automática. Edite apenas as áreas em branco e o log.');
   protection.setWarningOnly(true);
+  const posEnd = 59 + ITEMS_POS_FINANCEIRA.length; // 64
+
   protection.setUnprotectedRanges([
-    sheet.getRange(`B12:B${fixosEnd}`),   // Budget Gastos Fixos
-    sheet.getRange(`B23:B${varEnd}`),      // Budget Gastos Variáveis
-    sheet.getRange('C49'),                 // Rendimento do mês
-    sheet.getRange('C52:C54'),            // Valores de Patrimônio
-    sheet.getRange(`A${LOG_ROW}:D2000`),  // Log de transações
+    sheet.getRange(`B12:B${fixosEnd}`),         // Budget Gastos Fixos
+    sheet.getRange(`B23:B${varEnd}`),            // Budget Gastos Variáveis
+    sheet.getRange('C49'),                       // Rendimento do mês
+    sheet.getRange('C52:C54'),                   // Valores de Patrimônio
+    sheet.getRange(`C60:C${posEnd}`),            // Posição Financeira
+    sheet.getRange(`A${LOG_ROW}:D2000`),         // Log de transações
   ]);
 }
 
