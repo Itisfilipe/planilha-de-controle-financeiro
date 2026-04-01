@@ -96,6 +96,11 @@ const FMT_BRL = 'R$ #,##0.00';
 // Colunas de dados no dashboard (exclui cols 7 e 11 que são separadores visuais)
 const DASH_COLS = [2, 3, 4, 5, 6, 8, 9, 10, 12];
 
+const DASH_HEADERS = [
+  'Mês', 'Entradas PF', 'Gastos Fixos', 'Gastos Variáveis', 'Aportes', 'Saldo PF',
+  '', 'Faturamento PJ', 'Custos PJ', 'Saldo PJ', '', 'Ativos Financeiros',
+];
+
 // ─── CATEGORIAS ───────────────────────────────────────────────────────────────
 // Fonte única de verdade: os arrays de seção definem os nomes.
 // CATEGORIAS é construída a partir deles — renomear aqui atualiza tudo.
@@ -478,16 +483,24 @@ function verificarMesesAno() {
 
 // ─── FECHAR / REABRIR MÊS ────────────────────────────────────────────────────
 
-function fecharMes() {
+// Valida que a aba ativa é mensal (ex: Jan/2026) e retorna { ui, sheet, nome }.
+// Retorna null (e mostra alerta) se a aba não é mensal.
+function obterAbaMensal() {
   const ui    = SpreadsheetApp.getUi();
-  const ss    = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getActiveSheet();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const nome  = sheet.getName();
 
   if (!/^[A-Za-z]{3}\/\d{4}$/.test(nome)) {
     ui.alert('Abra uma aba mensal (ex: Jan/2026) antes de usar esta função.');
-    return;
+    return null;
   }
+  return { ui, sheet, nome };
+}
+
+function fecharMes() {
+  const ctx = obterAbaMensal();
+  if (!ctx) return;
+  const { ui, sheet, nome } = ctx;
 
   const ok = ui.alert(
     'Fechar Mês',
@@ -502,22 +515,15 @@ function fecharMes() {
   const protection = sheet.protect()
     .setDescription(`Mês fechado — "${nome}" está bloqueado para edição.`);
   protection.setWarningOnly(true);
-  // Sem setUnprotectedRanges → tudo fica protegido
 
   sheet.setTabColor('#4CAF50'); // verde = fechado
   ui.alert(`Mês "${nome}" fechado! A aba está protegida contra edições.`);
 }
 
 function reabrirMes() {
-  const ui    = SpreadsheetApp.getUi();
-  const ss    = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getActiveSheet();
-  const nome  = sheet.getName();
-
-  if (!/^[A-Za-z]{3}\/\d{4}$/.test(nome)) {
-    ui.alert('Abra uma aba mensal (ex: Jan/2026) antes de usar esta função.');
-    return;
-  }
+  const ctx = obterAbaMensal();
+  if (!ctx) return;
+  const { ui, sheet, nome } = ctx;
 
   const ok = ui.alert(
     'Reabrir Mês',
@@ -526,9 +532,8 @@ function reabrirMes() {
   );
   if (ok !== ui.Button.YES) return;
 
-  const L = calcLayout();
-  aplicarProtecao(sheet, L);
-  sheet.setTabColor(null); // remove cor
+  aplicarProtecao(sheet, calcLayout());
+  sheet.setTabColor(null);
   ui.alert(`Mês "${nome}" reaberto! Áreas editáveis restauradas.`);
 }
 
@@ -706,9 +711,10 @@ function montarAbaMensal(sheet, mesNome, ano) {
 
   // Montar dados para o gráfico: label + valor real (col C) de Fixos e Variáveis
   const chartLabels = [...CAT_FIXO, ...CAT_VARIAVEL];
-  const chartRows   = [];
-  CAT_FIXO.forEach((_, i)    => chartRows.push(L.fixStart + i));
-  CAT_VARIAVEL.forEach((_, i) => chartRows.push(L.varStart + i));
+  const chartRows   = [
+    ...CAT_FIXO.map((_, i)     => L.fixStart + i),
+    ...CAT_VARIAVEL.map((_, i) => L.varStart + i),
+  ];
 
   // Escrever dados auxiliares na coluna G:H (fora da área visível principal)
   sheet.setColumnWidth(7, 180);
@@ -720,12 +726,10 @@ function montarAbaMensal(sheet, mesNome, ano) {
     sheet.getRange(r, 7).setValue(label);
     sheet.getRange(r, 8).setFormula(`=C${chartRows[i]}`).setNumberFormat(FMT_BRL);
   });
-  const chartDataStart = L.fixHeader;
-  const chartDataEnd   = L.fixHeader + chartLabels.length;
 
   sheet.insertChart(sheet.newChart()
     .setChartType(Charts.ChartType.PIE)
-    .addRange(sheet.getRange(chartDataStart, 7, chartLabels.length + 1, 2))
+    .addRange(sheet.getRange(L.fixHeader, 7, chartLabels.length + 1, 2))
     .setPosition(3, 6, 20, 0)
     .setOption('title', 'Gastos por Categoria')
     .setOption('width', 480).setOption('height', 400)
@@ -769,8 +773,7 @@ function criarDashboard(ss) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sheet.setRowHeight(2, 30);
-  ['Mês', 'Entradas PF', 'Gastos Fixos', 'Gastos Variáveis', 'Aportes', 'Saldo PF',
-   '', 'Faturamento PJ', 'Custos PJ', 'Saldo PJ', '', 'Ativos Financeiros'].forEach((h, i) => {
+  DASH_HEADERS.forEach((h, i) => {
     sheet.getRange(2, i + 1)
       .setValue(h)
       .setBackground(COR.secao).setFontColor(COR.secaoFonte)
@@ -879,12 +882,18 @@ function criarDashboard(ss) {
     .setOption('series', { 0: { color: '#9C27B0' } })
     .build());
 
-  // Chart E — Gastos Fixos vs Variáveis (pizza)
+  // Chart E — Gastos Fixos vs Variáveis (pizza/donut)
+  // Dados auxiliares: 2 linhas com totais anuais para gerar apenas 2 fatias
   const chartRow3 = chartRow2 + 20;
+  const pieDataRow = chartRow3 - 2;
+  sheet.getRange(pieDataRow, 1).setValue('Gastos Fixos');
+  sheet.getRange(pieDataRow, 2).setFormula(`=C${totalRow}`);
+  sheet.getRange(pieDataRow + 1, 1).setValue('Gastos Variáveis');
+  sheet.getRange(pieDataRow + 1, 2).setFormula(`=D${totalRow}`);
+
   sheet.insertChart(sheet.newChart()
     .setChartType(Charts.ChartType.PIE)
-    .addRange(sheet.getRange(2, 3, totalRow - 1, 1))   // Fixos header + data
-    .addRange(sheet.getRange(2, 4, totalRow - 1, 1))   // Variáveis header + data
+    .addRange(sheet.getRange(pieDataRow, 1, 2, 2))
     .setPosition(chartRow3, 1, 0, 0)
     .setOption('title', 'Gastos Fixos vs Variáveis (Ano)')
     .setOption('width', 500).setOption('height', 350)
@@ -901,10 +910,7 @@ function criarDashboard(ss) {
     .setFontWeight('bold').setFontSize(11)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
-  sheet.getRange(acumHeader + 1, 1, 1, 12).setValues([
-    ['Mês', 'Entradas PF', 'Gastos Fixos', 'Gastos Variáveis', 'Aportes', 'Saldo PF',
-     '', 'Faturamento PJ', 'Custos PJ', 'Saldo PJ', '', 'Ativos Financeiros']
-  ]);
+  sheet.getRange(acumHeader + 1, 1, 1, 12).setValues([DASH_HEADERS]);
   sheet.getRange(acumHeader + 1, 1, 1, 12)
     .setBackground(COR.secao).setFontColor(COR.secaoFonte)
     .setFontWeight('bold').setHorizontalAlignment('center');
@@ -1017,6 +1023,7 @@ function limparAba(sheet) {
   sheet.clearNotes();
   sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns()).clearDataValidations();
   sheet.setConditionalFormatRules([]);
+  sheet.getCharts().forEach(c => sheet.removeChart(c));
   sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET).forEach(p => p.remove());
 }
 
