@@ -1,92 +1,94 @@
 # Controle Financeiro — Google Apps Script
 
-A Google Sheets financial control spreadsheet generator for Brazilian freelancers and business owners (PJ/Lucro Presumido). Built entirely with Google Apps Script — no external dependencies.
+Planilha de controle financeiro pessoal e empresarial gerada automaticamente no Google Sheets via Google Apps Script. Desenvolvida para freelancers e empresários brasileiros (PJ/Lucro Presumido) que faturam para clientes no exterior.
 
-## Features
+Sem dependências externas — funciona 100% dentro do Google Sheets.
 
-- **Monthly tabs** (Jan–Dez) with full summary + transaction log
-- **Personal finances (PF)**: income, fixed/variable expenses with budget vs. actual comparison, investments, net worth tracking
-- **Business finances (PJ/CNPJ)**: revenue, taxes (GPS, IRRF, IRPJ, CSLL, DARF), costs, PJ balance
-- **Dashboard** with yearly overview across all months
-- **Flexible structure**: insert or remove rows in any section without breaking formulas (SUMIF-based, not range-based)
-- **Protected cells**: formula cells are gray and trigger a warning if accidentally edited
-- **Date picker** on transaction log entries
-- **pt_BR locale**: dates as dd/mm/yyyy, currency as R$
-- **Custom "Financeiro" menu** with useful actions
+## Funcionalidades
 
-## Setup
+- **Abas mensais** (Jan–Dez) com resumo e log de transações
+- **Finanças pessoais (PF)**: entradas, gastos fixos e variáveis com comparativo budget × real, investimentos e patrimônio
+- **Finanças empresariais (PJ/CNPJ)**: faturamento, impostos (GPS, IRRF, IRPJ, CSLL, DARF), custos e saldo PJ
+- **Dashboard** com visão consolidada do ano
+- **Estrutura flexível**: adicionar ou remover linhas em qualquer seção não quebra os cálculos (baseado em SUMIF + tags, não em intervalos fixos)
+- **Células protegidas**: fórmulas ficam em cinza e exibem aviso se editadas acidentalmente
+- **Seletor de data** no log de transações
+- **Locale pt_BR**: datas no formato dd/mm/aaaa, valores em R$
+- **Menu "Financeiro"** com 9 ações úteis
 
-1. Create a new Google Sheets spreadsheet
-2. Go to **Extensions > Apps Script**
-3. Delete any existing code and paste the contents of `planilha_financeira.gs`
-4. Save (Ctrl+S / Cmd+S)
-5. Reload the spreadsheet — the **Financeiro** menu will appear
-6. Click **Financeiro > Criar planilha completa (ano inteiro)**
+## Configuração inicial
 
-## Menu Actions
+1. Crie uma planilha nova no Google Sheets
+2. Vá em **Extensões > Apps Script**
+3. Apague o código existente e cole o conteúdo de `planilha_financeira.gs`
+4. Salve (Ctrl+S / Cmd+S)
+5. Recarregue a planilha — o menu **Financeiro** aparecerá automaticamente
+6. Clique em **Financeiro > Criar planilha completa (ano inteiro)**
 
-| Action | Description |
-|--------|-------------|
-| Criar planilha completa | Creates all 12 monthly tabs + Dashboard for the configured year |
-| Novo mês... | Creates a single month tab (any month/year) |
-| Criar próximo mês automaticamente | Detects the next month from today and creates it |
-| Ir para o mês atual | Navigates to the current month's tab |
-| Copiar budget do mês anterior | Copies budget values from the previous month |
-| Atualizar dropdowns | Refreshes category dropdowns in all monthly tabs |
-| Resumo do mês atual | Shows a quick summary of totals for the active month |
-| Verificar meses do ano | Shows which months exist and which are missing |
-| Instruções de uso | In-spreadsheet help text |
+## Menu Financeiro
 
-## How to Fill Data
+| Ação | Descrição |
+|------|-----------|
+| Criar planilha completa | Cria as 12 abas mensais + Dashboard para o ano configurado |
+| Novo mês... | Cria uma aba para qualquer mês/ano informado |
+| Criar próximo mês automaticamente | Detecta o próximo mês a partir de hoje e cria a aba |
+| Ir para o mês atual | Navega para a aba do mês corrente |
+| Copiar budget do mês anterior | Copia os valores de budget do mês anterior |
+| Atualizar dropdowns | Atualiza as listas de categorias em todas as abas mensais |
+| Resumo do mês atual | Exibe um resumo rápido dos totais da aba ativa |
+| Verificar meses do ano | Mostra quais meses existem e quais estão faltando |
+| Instruções de uso | Exibe as instruções de preenchimento |
 
-### Daily: Transaction Log (rows 62+)
-- **Column A** — Date (date picker available)
-- **Column B** — Description
-- **Column C** — Category (dropdown)
-- **Column D** — Amount (positive number; the category determines if it's income or expense)
+## Como preencher
 
-The category you select automatically routes the amount to the correct summary section above.
+### Diariamente — Log de transações (linha 62 em diante)
+- **Coluna A** — Data (seletor de data disponível)
+- **Coluna B** — Descrição
+- **Coluna C** — Categoria (dropdown)
+- **Coluna D** — Valor (número positivo; a categoria determina se é entrada ou saída)
 
-### Monthly: Budget
-- Fill column B in the **Gastos Fixos** and **Gastos Variáveis** sections
-- Use **Financeiro > Copiar budget do mês anterior** to reuse last month's values
+A categoria selecionada direciona o valor automaticamente para a seção correta no resumo acima.
 
-### Manual Values
-- **Rendimento do mês** (row 49, col C): investment gain or loss for the month
-- **Patrimônio** (rows 52–54, col C): current value of each asset
+### Mensalmente — Budget
+- Preencha a coluna B nas seções **Gastos Fixos** e **Gastos Variáveis**
+- Use **Financeiro > Copiar budget do mês anterior** para reaproveitar os valores
 
-### Cells in Gray
-These contain automatic formulas — do not edit. A warning dialog will appear if you try.
+### Valores manuais
+- **Rendimento do mês** (linha 49, coluna C): ganho ou perda com investimentos no mês
+- **Patrimônio** (linhas 52–54, coluna C): valor atual de cada bem
 
-## Configuration
+### Células em cinza
+Contêm fórmulas automáticas — não edite. Um aviso de confirmação aparece se você tentar.
 
-At the top of `planilha_financeira.gs`, adjust these constants before running:
+## Configuração no script
+
+No topo de `planilha_financeira.gs`, ajuste as constantes antes de rodar:
 
 ```javascript
-const ANO = 2026; // Year to generate
+const ANO = 2026; // Ano a ser gerado
 
-const CAT_FIXO = [   // Fixed expense categories
+const CAT_FIXO = [   // Categorias de gastos fixos
   'Moradia / Aluguel + IPTU',
-  // ...add or remove as needed
+  // ...adicione ou remova conforme necessário
 ];
 ```
 
-After changing categories, run **Financeiro > Atualizar dropdowns** to update all existing tabs.
+Após alterar categorias, execute **Financeiro > Atualizar dropdowns** para propagar a mudança.
 
-## New Year
+## Novo ano
 
-1. Change `const ANO = 2027` in the script
-2. Run **Financeiro > Criar planilha completa**
-3. The existing Dashboard is automatically archived as "Dashboard 2026"
+1. Altere `const ANO = 2027` no script
+2. Execute **Financeiro > Criar planilha completa**
+3. O Dashboard existente é arquivado automaticamente como "Dashboard 2026"
 
-## Tax Context (PJ Lucro Presumido)
+## Contexto fiscal (PJ Lucro Presumido)
 
-Pre-configured cost categories for Brazilian service companies billing foreign clients:
-- GPS e IRRF (monthly)
-- IRPJ and CSLL (quarterly)
+Categorias de custos pré-configuradas para empresas de serviços que faturam em moeda estrangeira:
+- GPS e IRRF (mensal)
+- IRPJ e CSLL (trimestral)
 - DARF IRRF — Lucros e Dividendos
-- PIS/COFINS not included (exempt for foreign-currency services)
+- PIS/COFINS não incluídos (isentos para serviços ao exterior)
 
-## License
+## Licença
 
 MIT
