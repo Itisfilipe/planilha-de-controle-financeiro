@@ -46,19 +46,31 @@ const CAT_ENTRADA = [
 ];
 
 const CAT_FIXO = [
-  'Moradia',
+  'Moradia / Aluguel',
+  'Condomínio / IPTU',
+  'Energia',
+  'Água',
+  'Internet',
+  'Celular',
   'Assinaturas',
-  'Cartão de crédito',
-  'Trabalho',
+  'Plano de saúde',
+  'Seguro Carro',
+  'Seguro Vida',
+  'Mesada Carol',
+  'Academia',
 ];
 
 const CAT_VARIAVEL = [
-  'Alimentação',
-  'Transporte',
-  'Saúde',
-  'Educação',
-  'Lazer',
+  'Cartão de crédito',
+  'Mercado / Feira',
+  'Refeições fora',
+  'Transporte / Combustível',
+  'Farmácia',
+  'Educação / Cursos',
+  'Lazer / Entretenimento',
   'Vestuário',
+  'Trabalho',
+  'Presentes',
   'Outros',
 ];
 
