@@ -189,7 +189,7 @@ function onOpen() {
     .addSeparator()
     .addItem('Criar / atualizar aba Dívidas',            'criarAbaDividas')
     .addSeparator()
-    .addItem('Instruções de uso',                        'mostrarInstrucoes')
+    .addItem('Como usar (abrir aba)',                     'criarAbaComoUsar')
     .addToUi();
 }
 
@@ -219,6 +219,9 @@ function criarPlanilhaFinanceira() {
   });
 
   criarDashboard(ss);
+
+  // Cria aba "Como usar" se não existir
+  if (!ss.getSheetByName('Como usar')) criarAbaComoUsar();
 
   ['Planilha1', 'Sheet1'].forEach(name => {
     const s = ss.getSheetByName(name);
@@ -540,36 +543,102 @@ function reabrirMes() {
   ui.alert(`Mês "${nome}" reaberto! Áreas editáveis restauradas.`);
 }
 
-// ─── INSTRUÇÕES DE USO ────────────────────────────────────────────────────────
+// ─── ABA COMO USAR ────────────────────────────────────────────────────────────
 
-function mostrarInstrucoes() {
-  const ui = SpreadsheetApp.getUi();
-  ui.alert(
-    'Instruções de uso — Controle Financeiro',
-    'PREENCHIMENTO DIÁRIO\n' +
-    `  • Anote cada transação no LOG (linhas a partir de ${LOG_ROW}):\n` +
-    '    Data | Descrição | Categoria | Valor\n' +
-    '  • A Categoria (dropdown) determina em qual seção o valor aparece.\n' +
-    '  • Gastos lançados como positivos; o sistema subtrai automaticamente.\n\n' +
-    'BUDGET MENSAL\n' +
-    '  • Preencha a coluna B nas seções Gastos Fixos e Variáveis.\n' +
-    '  • Use "Copiar budget do mês anterior" para reaproveitar os valores.\n\n' +
-    'VALORES MANUAIS\n' +
-    '  • Saldo Anterior (seção no topo): saldo em conta, investimentos,\n' +
-    '    renda fixa/variável, cripto — atualize todo mês para acompanhar.\n' +
-    '  • Rendimento do mês (seção Investimentos): ganho ou perda.\n\n' +
-    'CÉLULAS EM CINZA\n' +
-    '  • Contêm fórmulas automáticas — não edite.\n' +
-    '  • Um aviso aparecerá se você tentar editar uma dessas células.\n\n' +
-    'NOVO ANO\n' +
-    '  • Mude a constante ANO no script e use "Criar planilha completa".\n' +
-    '  • O Dashboard antigo é arquivado automaticamente.\n\n' +
-    'NOVA CATEGORIA\n' +
-    '  • Adicione o nome no array correto no script (CAT_FIXO, etc.).\n' +
-    '  • Use "Atualizar categorias" para propagar a mudança\n' +
-    '    (resumo e dropdowns atualizados, log preservado).',
-    ui.ButtonSet.OK
-  );
+function criarAbaComoUsar() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Como usar');
+  if (sheet) {
+    ss.setActiveSheet(sheet);
+    return;
+  }
+
+  sheet = ss.insertSheet('Como usar');
+  sheet.setColumnWidth(1, 800);
+  sheet.setTabColor('#2196F3');
+
+  const linhas = [
+    ['COMO USAR — CONTROLE FINANCEIRO'],
+    [''],
+    ['PREENCHIMENTO DIÁRIO'],
+    ['No LOG (parte de baixo de cada aba mensal), preencha uma linha por transação:'],
+    ['  • Coluna A — Data (seletor de data disponível)'],
+    ['  • Coluna B — Descrição (ex: "Supermercado Extra")'],
+    ['  • Coluna C — Categoria (dropdown: Pró-labore, Moradia, Alimentação, etc.)'],
+    ['  • Coluna D — Valor (sempre positivo; a categoria determina a seção no resumo)'],
+    [''],
+    ['Os totais por categoria no resumo (parte de cima) atualizam automaticamente.'],
+    [''],
+    ['BUDGET MENSAL'],
+    ['  • Preencha a coluna B nas seções Gastos Fixos e Gastos Variáveis'],
+    ['  • A coluna D (Diferença) mostra Budget − Real automaticamente'],
+    ['  • Use Financeiro > Copiar budget do mês anterior para reaproveitar valores'],
+    [''],
+    ['VALORES MANUAIS (atualize todo mês)'],
+    ['  • Saldo Anterior (seção no topo): saldo em conta corrente PF/PJ, renda fixa, variável, cripto'],
+    ['  • Rendimento do mês (seção Investimentos): ganho ou perda com investimentos'],
+    [''],
+    ['MENU FINANCEIRO'],
+    ['  • Criar planilha completa — cria 12 abas mensais + Dashboard para o ano configurado'],
+    ['  • Novo mês... — cria qualquer mês/ano (ex: Jan/2027)'],
+    ['  • Criar próximo mês — detecta e cria o próximo mês automaticamente'],
+    ['  • Ir para o mês atual — navega para a aba do mês corrente'],
+    ['  • Copiar budget do mês anterior — copia valores de budget para o mês ativo'],
+    ['  • Atualizar categorias — recria o resumo com as categorias atuais (log preservado)'],
+    ['  • Resumo do mês — exibe totais de entradas, gastos, PJ e saldo'],
+    ['  • Verificar meses do ano — mostra quais meses existem e quais faltam'],
+    ['  • Fechar mês — bloqueia edição da aba (aba fica verde)'],
+    ['  • Reabrir mês — desbloqueia edição da aba'],
+    ['  • Criar / atualizar aba Dívidas — acompanhe parcelas e financiamentos'],
+    [''],
+    ['PERSONALIZAR CATEGORIAS'],
+    ['  1. Abra Extensões > Apps Script'],
+    ['  2. Edite os arrays no topo do código (CAT_FIXO, CAT_VARIAVEL, CAT_ENTRADA, etc.)'],
+    ['  3. Salve e volte para a planilha'],
+    ['  4. Use Financeiro > Atualizar categorias'],
+    ['  O resumo é reconstruído com as novas categorias. Dados do log são preservados.'],
+    ['  Valores manuais (budget, saldo anterior, rendimento) também são preservados.'],
+    [''],
+    ['DÍVIDAS E PARCELAS'],
+    ['  Use Financeiro > Criar / atualizar aba Dívidas.'],
+    ['  Preencha: Descrição, Valor total, Parcelas, Início e Parcelas pagas.'],
+    ['  O sistema calcula: Valor mensal, Restantes e Saldo devedor.'],
+    ['  Atualize "Parcelas pagas" todo mês para acompanhar.'],
+    [''],
+    ['NOVO ANO'],
+    ['  1. Abra Extensões > Apps Script e altere a constante ANO (ex: 2027)'],
+    ['  2. Salve e volte para a planilha'],
+    ['  3. Use Financeiro > Criar planilha completa'],
+    ['  O Dashboard antigo é arquivado automaticamente como "Dashboard 2026".'],
+    [''],
+    ['DASHBOARD'],
+    ['  • Visão consolidada do ano com gráficos e tabela acumulada (YTD)'],
+    ['  • Atualiza automaticamente conforme você preenche os meses'],
+    [''],
+    ['CÉLULAS EM CINZA'],
+    ['  Contêm fórmulas automáticas — não edite.'],
+    ['  Um aviso aparecerá se você tentar modificar essas células.'],
+    [''],
+    ['DICA: esta aba pode ser excluída sem afetar a planilha. Para recriá-la,'],
+    ['use Financeiro > Como usar (abrir aba).'],
+  ];
+
+  sheet.getRange(1, 1, linhas.length, 1).setValues(linhas)
+    .setFontFamily('Google Sans').setVerticalAlignment('middle');
+
+  // Título
+  sheet.getRange(1, 1).setFontSize(14).setFontWeight('bold')
+    .setBackground(COR.titulo).setFontColor(COR.tituloFonte);
+  sheet.setRowHeight(1, 42);
+
+  // Seções
+  [3, 12, 17, 21, 34, 42, 48, 53, 57].forEach(r => {
+    sheet.getRange(r, 1).setFontSize(11).setFontWeight('bold')
+      .setFontColor(COR.secao);
+  });
+
+  sheet.setFrozenRows(1);
+  ss.setActiveSheet(sheet);
 }
 
 // ─── ABA DÍVIDAS ──────────────────────────────────────────────────────────────

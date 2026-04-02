@@ -103,7 +103,7 @@ function onOpen() {
     .addSeparator()
     .addItem('Criar / atualizar aba Dívidas',     'criarAbaDividas')
     .addSeparator()
-    .addItem('Instruções de uso',                 'mostrarInstrucoes')
+    .addItem('Como usar (abrir aba)',              'criarAbaComoUsar')
     .addToUi();
 }
 
@@ -130,6 +130,10 @@ function criarMesAtual() {
 
   const sheet = getOrCreateSheet(ss, nome);
   montarAba(sheet, mes.nome, ano);
+
+  // Cria aba "Como usar" se não existir
+  if (!ss.getSheetByName('Como usar')) criarAbaComoUsar();
+
   ss.setActiveSheet(sheet);
 
   // Remove aba padrão se possível
@@ -250,24 +254,76 @@ function atualizarDropdowns() {
   ui.alert(`Categorias e dropdowns atualizados em ${count} aba(s).`);
 }
 
-// ─── INSTRUÇÕES ───────────────────────────────────────────────────────────────
+// ─── ABA COMO USAR ────────────────────────────────────────────────────────────
 
-function mostrarInstrucoes() {
-  SpreadsheetApp.getUi().alert(
-    'Como usar — Controle Financeiro Simples',
-    'DIARIAMENTE\n' +
-    `  • No LOG (a partir da linha ${LOG_ROW}), preencha:\n` +
-    '    Data | Descrição | Categoria | Valor\n' +
-    '  • Escolha a Categoria no dropdown.\n' +
-    '  • O resumo no topo atualiza automaticamente.\n\n' +
-    'CATEGORIAS\n' +
-    '  • Para adicionar/remover: edite os arrays no script\n' +
-    '    (CAT_ENTRADA, CAT_SAIDA) e use "Atualizar categorias".\n' +
-    '  • Resumo e dropdowns são atualizados, log preservado.\n\n' +
-    'CÉLULAS EM CINZA\n' +
-    '  • Contêm fórmulas — não edite.',
-    SpreadsheetApp.getUi().ButtonSet.OK
-  );
+function criarAbaComoUsar() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Como usar');
+  if (sheet) {
+    ss.setActiveSheet(sheet);
+    return;
+  }
+
+  sheet = ss.insertSheet('Como usar');
+  sheet.setColumnWidth(1, 800);
+  sheet.setTabColor('#2196F3');
+
+  const linhas = [
+    ['COMO USAR — CONTROLE FINANCEIRO SIMPLES'],
+    [''],
+    ['PREENCHIMENTO DIÁRIO'],
+    ['No LOG (parte de baixo de cada aba mensal), preencha uma linha por transação:'],
+    ['  • Coluna A — Data (seletor de data disponível)'],
+    ['  • Coluna B — Descrição (ex: "Supermercado Extra")'],
+    ['  • Coluna C — Categoria (escolha no dropdown: Salário, Alimentação, etc.)'],
+    ['  • Coluna D — Valor (sempre positivo; a categoria determina se é entrada ou saída)'],
+    [''],
+    ['Os totais por categoria no resumo (parte de cima) atualizam automaticamente.'],
+    [''],
+    ['MENU FINANCEIRO'],
+    ['  • Criar mês atual — cria a aba do mês corrente'],
+    ['  • Novo mês... — cria qualquer mês/ano (ex: Jan/2027)'],
+    ['  • Resumo do mês — exibe totais de entradas, saídas e saldo'],
+    ['  • Atualizar categorias — recria o resumo com as categorias atuais (log preservado)'],
+    ['  • Criar / atualizar aba Dívidas — acompanhe parcelas e financiamentos'],
+    [''],
+    ['PERSONALIZAR CATEGORIAS'],
+    ['  1. Abra Extensões > Apps Script'],
+    ['  2. Edite os arrays CAT_ENTRADA e CAT_SAIDA no topo do código'],
+    ['  3. Salve e volte para a planilha'],
+    ['  4. Use Financeiro > Atualizar categorias'],
+    ['  O resumo é reconstruído com as novas categorias. Dados do log são preservados.'],
+    [''],
+    ['DÍVIDAS E PARCELAS'],
+    ['  Use Financeiro > Criar / atualizar aba Dívidas.'],
+    ['  Preencha: Descrição, Valor total, Parcelas, Início e Parcelas pagas.'],
+    ['  O sistema calcula: Valor mensal, Restantes e Saldo devedor.'],
+    ['  Atualize "Parcelas pagas" todo mês para acompanhar.'],
+    [''],
+    ['CÉLULAS EM CINZA'],
+    ['  Contêm fórmulas automáticas — não edite.'],
+    ['  Um aviso aparecerá se você tentar modificar essas células.'],
+    [''],
+    ['DICA: esta aba pode ser excluída sem afetar a planilha. Para recriá-la,'],
+    ['use Financeiro > Como usar (abrir aba).'],
+  ];
+
+  sheet.getRange(1, 1, linhas.length, 1).setValues(linhas)
+    .setFontFamily('Google Sans').setVerticalAlignment('middle');
+
+  // Título
+  sheet.getRange(1, 1).setFontSize(14).setFontWeight('bold')
+    .setBackground(COR.titulo).setFontColor(COR.tituloFonte);
+  sheet.setRowHeight(1, 42);
+
+  // Seções
+  [3, 12, 19, 26, 32].forEach(r => {
+    sheet.getRange(r, 1).setFontSize(11).setFontWeight('bold')
+      .setFontColor(COR.secao);
+  });
+
+  sheet.setFrozenRows(1);
+  ss.setActiveSheet(sheet);
 }
 
 // ─── MONTAR ABA ───────────────────────────────────────────────────────────────
