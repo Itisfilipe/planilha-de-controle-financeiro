@@ -1,5 +1,7 @@
 # Controle Financeiro — Google Apps Script
 
+> **Versão atual: 1.0.0**
+
 Planilha de controle financeiro pessoal gerada automaticamente no Google Sheets via Google Apps Script. Sem dependências externas — funciona 100% dentro do Google Sheets.
 
 ## Funcionalidades

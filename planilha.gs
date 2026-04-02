@@ -1,5 +1,6 @@
 /**
  * CONTROLE FINANCEIRO — Google Apps Script
+ * Versão: 1.0.0
  *
  * Planilha de controle financeiro pessoal no Google Sheets.
  *
@@ -556,7 +557,28 @@ function criarAbaDividas() {
 
   let sheet = ss.getSheetByName('Dívidas');
   const isNew = !sheet;
-  if (isNew) sheet = ss.insertSheet('Dívidas');
+  if (isNew) {
+    sheet = ss.insertSheet('Dívidas');
+  } else {
+    // Salva dados manuais (A:C e E:F) antes de limpar
+    const lr = sheet.getLastRow();
+    let savedData = null;
+    if (lr >= 3) {
+      const all = sheet.getRange(3, 1, lr - 2, 6).getValues(); // A-F
+      savedData = all.filter(row => row[0] !== '' && row[0] !== 'TOTAIS');
+    }
+    // Limpa tudo exceto título (row 1)
+    if (lr >= 2) {
+      sheet.getRange(2, 1, lr - 1, sheet.getMaxColumns()).clearContent().clearFormat()
+        .clearDataValidations().setBackground(null);
+    }
+    sheet.setConditionalFormatRules([]);
+    sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET).forEach(p => p.remove());
+    // Restaura dados manuais
+    if (savedData && savedData.length > 0) {
+      sheet.getRange(3, 1, savedData.length, 6).setValues(savedData);
+    }
+  }
 
   // A=Descrição B=Valor total C=Parcelas D=Valor mensal E=Início
   // F=Parcelas pagas G=Restantes H=Saldo devedor I=Status
