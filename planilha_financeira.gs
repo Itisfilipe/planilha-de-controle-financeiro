@@ -903,8 +903,12 @@ function criarDashboard(ss) {
     sheet.getRange(row, 1).setValue(abrev);
     DASH_COLS.forEach(col => {
       const letra = colLetter(col);
+      // Col 12 (Ativos Financeiros) é snapshot — mostra o valor do mês, não acumulado
+      const formula = col === 12
+        ? `=${letra}${dRow}`
+        : `=SUM(${letra}$3:${letra}${dRow})`;
       sheet.getRange(row, col)
-        .setFormula(`=SUM(${letra}$3:${letra}${dRow})`)
+        .setFormula(formula)
         .setNumberFormat(FMT_BRL);
     });
     sheet.getRange(row, 1, 1, 12).setBackground(idx % 2 === 0 ? '#f7f9fc' : '#ffffff');
@@ -1083,8 +1087,9 @@ function reconstruirResumo(sheet) {
     });
   }
 
-  // Limpa área do resumo (entre título e log), preservando log
-  sheet.getRange(2, 1, LOG_ROW - 3, 5).clearContent().clearFormat()
+  // Limpa área do resumo (entre título e log title bar), preservando log
+  // LOG_ROW - 4: para antes do título "LOG DE TRANSAÇÕES" (LOG_ROW - 2)
+  sheet.getRange(2, 1, LOG_ROW - 4, 5).clearContent().clearFormat()
     .clearDataValidations().setBackground(null);
   sheet.setConditionalFormatRules([]);
 

@@ -340,7 +340,8 @@ function montarAba(sheet, mesNome, ano) {
 // Chamado por montarAba (aba nova) e atualizarDropdowns (aba existente).
 function reconstruirResumo(sheet) {
   // Limpa a área do resumo (entre título e log), preservando o log
-  sheet.getRange(2, 1, LOG_ROW - 3, 5).clearContent().clearFormat()
+  // LOG_ROW - 4: para antes do título "LOG DE TRANSAÇÕES" (que está em LOG_ROW - 2)
+  sheet.getRange(2, 1, LOG_ROW - 4, 5).clearContent().clearFormat()
     .clearDataValidations().setBackground(null);
   sheet.setConditionalFormatRules([]);
 
