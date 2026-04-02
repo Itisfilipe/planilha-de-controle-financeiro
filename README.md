@@ -35,11 +35,15 @@ Edite os arrays `CAT_ENTRADA` e `CAT_SAIDA` no topo do script. Depois:
 | Você preenche | Calculado automaticamente |
 |---------------|--------------------------|
 | **Descrição** — ex: "Geladeira Nubank" | **Valor mensal** = Valor total ÷ Parcelas |
-| **Valor total** — ex: R$ 3.600 | **Parcelas pagas** = contagem automática de pagamentos no log |
-| **Parcelas** — ex: 12 | **Restantes** = Parcelas − Parcelas pagas |
+| **Valor total** — ex: R$ 3.600 | **Pagas** = pagamentos no log + Anteriores |
+| **Parcelas** — ex: 12 | **Restantes** = Parcelas − Pagas |
 | **Início** — ex: Jan/2026 | **Saldo devedor** = Valor mensal × Restantes |
+| **Anteriores** — parcelas já pagas antes da planilha | **Status** = Ativa ou Quitada (automático) |
 
-A descrição da dívida vira automaticamente uma **categoria no dropdown** do log mensal. Ao lançar um pagamento com essa categoria, "Parcelas pagas" atualiza sozinho.
+- A descrição vira uma **categoria no dropdown** do log mensal
+- Ao lançar um pagamento com essa categoria, "Pagas" atualiza sozinho
+- Dívidas **quitadas** (Restantes ≤ 0) saem automaticamente do dropdown
+- Para dívidas já em andamento, preencha **"Anteriores"** com as parcelas já pagas antes de usar a planilha
 
 A linha de **Totais** no final mostra o compromisso mensal total e o saldo devedor total. Colunas em cinza contêm fórmulas — não edite.
 
