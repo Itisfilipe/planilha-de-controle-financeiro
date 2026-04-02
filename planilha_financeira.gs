@@ -12,7 +12,7 @@
  *
  * ADICIONAR CATEGORIA NOVA:
  * 1. Adicione o nome no array da seção correspondente (CAT_FIXO, CAT_VARIAVEL, etc.)
- * 2. Menu "Financeiro" → "Atualizar dropdowns"
+ * 2. Menu "Financeiro" → "Atualizar categorias"
  * 3. Insira a linha na aba do mês, copie a tag da coluna E da linha vizinha
  *
  * TAGS DE SEÇÃO (coluna E, invisível):
@@ -179,7 +179,7 @@ function onOpen() {
     .addItem('Ir para o mês atual',                      'irParaMesAtual')
     .addSeparator()
     .addItem('Copiar budget do mês anterior',            'copiarBudgetMesAnterior')
-    .addItem('Atualizar dropdowns de todas as abas',     'atualizarDropdowns')
+    .addItem('Atualizar categorias de todas as abas',     'atualizarDropdowns')
     .addSeparator()
     .addItem('Resumo do mês atual',                      'resumoMesAtual')
     .addItem('Verificar meses do ano',                   'verificarMesesAno')

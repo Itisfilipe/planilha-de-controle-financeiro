@@ -35,7 +35,7 @@ const MESES = [
 ];
 
 // ─── CATEGORIAS ───────────────────────────────────────────────────────────────
-// Edite estes arrays para personalizar. Depois use "Atualizar dropdowns".
+// Edite estes arrays para personalizar. Depois use "Atualizar categorias".
 
 const CAT_ENTRADA = [
   'Salário',
@@ -99,7 +99,7 @@ function onOpen() {
     .addItem('Novo mês...',                       'criarNovoMes')
     .addSeparator()
     .addItem('Resumo do mês',                     'resumoMes')
-    .addItem('Atualizar dropdowns',               'atualizarDropdowns')
+    .addItem('Atualizar categorias',               'atualizarDropdowns')
     .addSeparator()
     .addItem('Criar / atualizar aba Dívidas',     'criarAbaDividas')
     .addSeparator()
@@ -262,7 +262,7 @@ function mostrarInstrucoes() {
     '  • O resumo no topo atualiza automaticamente.\n\n' +
     'CATEGORIAS\n' +
     '  • Para adicionar/remover: edite os arrays no script\n' +
-    '    (CAT_ENTRADA, CAT_SAIDA) e use "Atualizar dropdowns".\n' +
+    '    (CAT_ENTRADA, CAT_SAIDA) e use "Atualizar categorias".\n' +
     '  • Resumo e dropdowns são atualizados, log preservado.\n\n' +
     'CÉLULAS EM CINZA\n' +
     '  • Contêm fórmulas — não edite.',

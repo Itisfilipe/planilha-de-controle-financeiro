@@ -26,7 +26,7 @@ Cria uma aba mensal com duas seções (Entradas e Saídas) e um log de transaç�
 Edite os arrays `CAT_ENTRADA` e `CAT_SAIDA` no topo do script. Depois:
 
 - **Mês novo** (sem dados): crie normalmente — a nova categoria já aparece no resumo e no dropdown.
-- **Mês existente (com dados)**: use **Financeiro > Atualizar dropdowns**. O resumo (seções com totais) e os dropdowns são reconstruídos automaticamente. **Os dados do log são preservados.**
+- **Mês existente (com dados)**: use **Financeiro > Atualizar categorias**. O resumo (seções com totais) e os dropdowns são reconstruídos automaticamente. **Os dados do log são preservados.**
 
 ---
 
@@ -66,7 +66,7 @@ Edite os arrays `CAT_ENTRADA` e `CAT_SAIDA` no topo do script. Depois:
 | Criar próximo mês automaticamente | Detecta o próximo mês a partir de hoje e cria a aba |
 | Ir para o mês atual | Navega para a aba do mês corrente |
 | Copiar budget do mês anterior | Copia os valores de budget do mês anterior |
-| Atualizar dropdowns | Atualiza as listas de categorias em todas as abas mensais |
+| Atualizar categorias | Atualiza as listas de categorias em todas as abas mensais |
 | Resumo do mês atual | Exibe um resumo rápido dos totais da aba ativa |
 | Verificar meses do ano | Mostra quais meses existem e quais estão faltando |
 | Fechar mês | Bloqueia a aba mensal contra edição acidental (aba fica verde) |
