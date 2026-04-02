@@ -40,8 +40,6 @@ const MESES = [
 const CAT_ENTRADA = [
   'Salário',
   'Freelance',
-  'Aluguel recebido',
-  'Rendimentos',
   'Outros entrada',
 ];
 
@@ -49,6 +47,7 @@ const CAT_SAIDA = [
   'Moradia',
   'Alimentação',
   'Transporte',
+  'Trabalho',
   'Saúde',
   'Educação',
   'Lazer',
@@ -225,8 +224,8 @@ function atualizarDropdowns() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   const ok = ui.alert(
-    'Atualizar Dropdowns',
-    'Atualizar a lista de categorias em todas as abas mensais?',
+    'Atualizar Categorias',
+    'Atualiza dropdowns e resumo (entradas/saídas) em todas as abas mensais.\n\nOs dados do log serão preservados. Continuar?',
     ui.ButtonSet.YES_NO
   );
   if (ok !== ui.Button.YES) return;
@@ -239,12 +238,13 @@ function atualizarDropdowns() {
   let count = 0;
   ss.getSheets().forEach(sheet => {
     if (/^[A-Za-z]{3}\/\d{4}$/.test(sheet.getName())) {
+      reconstruirResumo(sheet);
       sheet.getRange(`C${LOG_ROW}:C2000`).setDataValidation(validacao);
       count++;
     }
   });
 
-  ui.alert(`Dropdowns atualizados em ${count} aba(s).`);
+  ui.alert(`Categorias e dropdowns atualizados em ${count} aba(s).`);
 }
 
 // ─── INSTRUÇÕES ───────────────────────────────────────────────────────────────
@@ -259,7 +259,8 @@ function mostrarInstrucoes() {
     '  • O resumo no topo atualiza automaticamente.\n\n' +
     'CATEGORIAS\n' +
     '  • Para adicionar/remover: edite os arrays no script\n' +
-    '    (CAT_ENTRADA, CAT_SAIDA) e use "Atualizar dropdowns".\n\n' +
+    '    (CAT_ENTRADA, CAT_SAIDA) e use "Atualizar dropdowns".\n' +
+    '  • Resumo e dropdowns são atualizados, log preservado.\n\n' +
     'CÉLULAS EM CINZA\n' +
     '  • Contêm fórmulas — não edite.',
     SpreadsheetApp.getUi().ButtonSet.OK
@@ -288,6 +289,58 @@ function montarAba(sheet, mesNome, ano) {
   sheet.setColumnWidth(4, 130);
   sheet.setColumnWidth(5, 20);
 
+  // ── Título ─────────────────────────────────────────────────────────────────
+  sheet.setRowHeight(1, 42);
+  sheet.getRange(1, 1, 1, 4).merge()
+    .setValue(`${mesNome} / ${ano}`)
+    .setBackground(COR.titulo).setFontColor(COR.tituloFonte)
+    .setFontWeight('bold').setFontSize(13)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+
+  // ── Resumo (entradas, saídas, saldo) ───────────────────────────────────────
+  reconstruirResumo(sheet);
+
+  // ── LOG DE TRANSAÇÕES ──────────────────────────────────────────────────────
+  sheet.setRowHeight(LOG_ROW - 2, 32);
+  sheet.getRange(LOG_ROW - 2, 1, 1, 4).merge()
+    .setValue('LOG DE TRANSAÇÕES')
+    .setBackground(COR.titulo).setFontColor(COR.tituloFonte)
+    .setFontWeight('bold').setFontSize(11)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+
+  sheet.setRowHeight(LOG_ROW - 1, 28);
+  ['Data', 'Descrição', 'Categoria', 'Valor'].forEach((h, i) => {
+    sheet.getRange(LOG_ROW - 1, i + 1)
+      .setValue(h)
+      .setBackground(COR.logHeader).setFontColor(COR.logFonte)
+      .setFontWeight('bold').setHorizontalAlignment('center');
+  });
+
+  sheet.getRange(`A${LOG_ROW}:A2000`).setNumberFormat('dd/mm/yyyy');
+  sheet.getRange(`D${LOG_ROW}:D2000`).setNumberFormat(FMT_BRL);
+
+  sheet.getRange(`C${LOG_ROW}:C2000`).setDataValidation(
+    SpreadsheetApp.newDataValidation()
+      .requireValueInList(CATEGORIAS, true)
+      .setAllowInvalid(false)
+      .build()
+  );
+
+  sheet.getRange(`A${LOG_ROW}:A2000`).setDataValidation(
+    SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(true).build()
+  );
+
+  sheet.setFrozenRows(1);
+}
+
+// Reconstrói as seções de resumo (entradas, saídas, saldo) sem tocar no log.
+// Chamado por montarAba (aba nova) e atualizarDropdowns (aba existente).
+function reconstruirResumo(sheet) {
+  // Limpa a área do resumo (entre título e log), preservando o log
+  sheet.getRange(2, 1, LOG_ROW - 3, 5).clearContent().clearFormat()
+    .clearDataValidations().setBackground(null);
+  sheet.setConditionalFormatRules([]);
+
   // Posições calculadas
   const entHeader = 3;
   const entStart  = entHeader + 1;
@@ -300,14 +353,6 @@ function montarAba(sheet, mesNome, ano) {
   const saiTotal  = saiEnd + 1;
 
   const saldoRow  = saiTotal + 2;
-
-  // ── Título ─────────────────────────────────────────────────────────────────
-  sheet.setRowHeight(1, 42);
-  sheet.getRange(1, 1, 1, 4).merge()
-    .setValue(`${mesNome} / ${ano}`)
-    .setBackground(COR.titulo).setFontColor(COR.tituloFonte)
-    .setFontWeight('bold').setFontSize(13)
-    .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   // ── ENTRADAS ───────────────────────────────────────────────────────────────
   cabecalho(sheet, entHeader, 'ENTRADAS', ['', '', 'Real', '']);
@@ -344,38 +389,7 @@ function montarAba(sheet, mesNome, ano) {
     .setNumberFormat(FMT_BRL);
   formatacaoCondicional(sheet, `C${saldoRow}:C${saldoRow}`);
 
-  // ── LOG DE TRANSAÇÕES ──────────────────────────────────────────────────────
-  sheet.setRowHeight(LOG_ROW - 2, 32);
-  sheet.getRange(LOG_ROW - 2, 1, 1, 4).merge()
-    .setValue('LOG DE TRANSAÇÕES')
-    .setBackground(COR.titulo).setFontColor(COR.tituloFonte)
-    .setFontWeight('bold').setFontSize(11)
-    .setHorizontalAlignment('center').setVerticalAlignment('middle');
-
-  sheet.setRowHeight(LOG_ROW - 1, 28);
-  ['Data', 'Descrição', 'Categoria', 'Valor'].forEach((h, i) => {
-    sheet.getRange(LOG_ROW - 1, i + 1)
-      .setValue(h)
-      .setBackground(COR.logHeader).setFontColor(COR.logFonte)
-      .setFontWeight('bold').setHorizontalAlignment('center');
-  });
-
-  sheet.getRange(`A${LOG_ROW}:A2000`).setNumberFormat('dd/mm/yyyy');
-  sheet.getRange(`D${LOG_ROW}:D2000`).setNumberFormat(FMT_BRL);
-
-  sheet.getRange(`C${LOG_ROW}:C2000`).setDataValidation(
-    SpreadsheetApp.newDataValidation()
-      .requireValueInList(CATEGORIAS, true)
-      .setAllowInvalid(false)
-      .build()
-  );
-
-  sheet.getRange(`A${LOG_ROW}:A2000`).setDataValidation(
-    SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(true).build()
-  );
-
   // ── Formatação ─────────────────────────────────────────────────────────────
-  // Cinza em labels e fórmulas
   const g = COR.protegido;
   [
     `A${entStart}:A${entEnd}`,
@@ -393,7 +407,6 @@ function montarAba(sheet, mesNome, ano) {
     sheet.getRange(`A${LOG_ROW}:D2000`),
   ]);
 
-  sheet.setFrozenRows(1);
   sheet.getRange(1, 1, saldoRow, 4).setVerticalAlignment('middle');
 }
 

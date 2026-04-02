@@ -361,8 +361,8 @@ function atualizarDropdowns() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   const ok = ui.alert(
-    'Atualizar Dropdowns',
-    'Atualiza a lista de categorias no log de transações em todas as abas mensais.\n\nNenhum dado existente será apagado. Continuar?',
+    'Atualizar Categorias',
+    'Atualiza o resumo (seções de categorias) e os dropdowns em todas as abas mensais.\n\nOs dados do log serão preservados. Continuar?',
     ui.ButtonSet.YES_NO
   );
   if (ok !== ui.Button.YES) return;
@@ -375,12 +375,13 @@ function atualizarDropdowns() {
   let count = 0;
   ss.getSheets().forEach(sheet => {
     if (/^[A-Za-z]{3}\/\d{4}$/.test(sheet.getName())) {
+      reconstruirResumo(sheet);
       sheet.getRange(`C${LOG_ROW}:C2000`).setDataValidation(validacao);
       count++;
     }
   });
 
-  ui.alert(`Dropdowns atualizados em ${count} aba(s).`);
+  ui.alert(`Categorias e dropdowns atualizados em ${count} aba(s).`);
 }
 
 // ─── CRIAR PRÓXIMO MÊS ───────────────────────────────────────────────────────
@@ -563,7 +564,8 @@ function mostrarInstrucoes() {
     '  • O Dashboard antigo é arquivado automaticamente.\n\n' +
     'NOVA CATEGORIA\n' +
     '  • Adicione o nome no array correto no script (CAT_FIXO, etc.).\n' +
-    '  • Use "Atualizar dropdowns" para propagar a mudança.',
+    '  • Use "Atualizar categorias" para propagar a mudança\n' +
+    '    (resumo e dropdowns atualizados, log preservado).',
     ui.ButtonSet.OK
   );
 }
@@ -594,9 +596,6 @@ function montarAbaMensal(sheet, mesNome, ano) {
   sheet.setColumnWidth(4, 130);
   sheet.setColumnWidth(5, 20);  // E — tag de seção (invisível)
 
-  // ── Posições de linha — calculadas a partir dos arrays de categorias ──────
-  const L = calcLayout();
-
   // ── Título ─────────────────────────────────────────────────────────────────
   sheet.setRowHeight(1, 42);
   sheet.getRange(1, 1, 1, 4).merge()
@@ -605,75 +604,8 @@ function montarAbaMensal(sheet, mesNome, ano) {
     .setFontWeight('bold').setFontSize(13)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
-  // ── SALDO ANTERIOR ─────────────────────────────────────────────────────────
-  cabecalhoSecao(sheet, L.posHeader, 'SALDO ANTERIOR', COR.secao, COR.secaoFonte, ['', '', 'Saldo atual', '']);
-  ITEMS_POS_FINANCEIRA.forEach((item, i) => {
-    linhaItem(sheet, L.posStart + i, item, TAG.posFinanceira, null, null, null);
-    sheet.getRange(L.posStart + i, 3).setNumberFormat(FMT_BRL);
-  });
-  sheet.getRange(L.posTotal, 1, 1, 4).setBackground(COR.total);
-  sheet.getRange(L.posTotal, 1).setValue('TOTAL ATIVOS FINANCEIROS').setFontWeight('bold');
-  sheet.getRange(L.posTotal, 3)
-    .setFormula(`=SUMIF($E:$E;"${TAG.posFinanceira}";$C:$C)`)
-    .setFontWeight('bold').setNumberFormat(FMT_BRL);
-
-  // ── ENTRADAS ───────────────────────────────────────────────────────────────
-  cabecalhoSecao(sheet, L.entHeader, 'ENTRADAS', COR.secao, COR.secaoFonte, ['', '', 'Real', '']);
-  CAT_ENTRADA.forEach((cat, i) => {
-    linhaItem(sheet, L.entStart + i, cat, TAG.entrada, null, sumifCategoria(L.entStart + i), null);
-  });
-  linhaTotalSecao(sheet, L.entTotal, 'TOTAL ENTRADAS', TAG.entrada, null, false);
-
-  // ── GASTOS FIXOS ───────────────────────────────────────────────────────────
-  montarSecaoGastos(sheet, L.fixHeader, 'GASTOS FIXOS', L.fixStart, CAT_FIXO, TAG.fixo, L.fixTotal, 'TOTAL FIXOS');
-
-  // ── GASTOS VARIÁVEIS ───────────────────────────────────────────────────────
-  montarSecaoGastos(sheet, L.varHeader, 'GASTOS VARIÁVEIS', L.varStart, CAT_VARIAVEL, TAG.variavel, L.varTotal, 'TOTAL VARIÁVEIS');
-
-  // CF cobre diff de fixos e variáveis
-  formatacaoDiferenca(sheet, `D${L.fixStart}:D${L.varTotal}`);
-
-  // ── PJ / CNPJ ──────────────────────────────────────────────────────────────
-  cabecalhoSecao(sheet, L.pjHeader, 'PJ / CNPJ', COR.pj, COR.pjFonte, ['', '', 'Real', '']);
-  linhaItem(sheet, L.pjFatRow, 'Faturamento PJ', TAG.pjFat, null, sumifCategoria(L.pjFatRow), null);
-  CAT_PJ_CUSTO.forEach((cat, i) => {
-    linhaItem(sheet, L.pjCustoStart + i, cat, TAG.pjCusto, null, sumifCategoria(L.pjCustoStart + i), null);
-  });
-  sheet.getRange(L.pjSaldoRow, 1, 1, 4).setBackground(COR.pjTotal);
-  sheet.getRange(L.pjSaldoRow, 1).setValue('SALDO PJ').setFontWeight('bold');
-  sheet.getRange(L.pjSaldoRow, 3)
-    .setFormula(`=SUMIF($E:$E;"${TAG.pjFat}";$C:$C)-SUMIF($E:$E;"${TAG.pjCusto}";$C:$C)`)
-    .setFontWeight('bold').setNumberFormat(FMT_BRL);
-  formatacaoDiferenca(sheet, `C${L.pjSaldoRow}:C${L.pjSaldoRow}`);
-
-  // ── INVESTIMENTOS ──────────────────────────────────────────────────────────
-  cabecalhoSecao(sheet, L.invHeader, 'INVESTIMENTOS', COR.secao, COR.secaoFonte, ['', '', 'Valor', '']);
-  CAT_INVESTIMENTO.forEach((cat, i) => {
-    linhaItem(sheet, L.invStart + i, cat, TAG.invAporte, null, sumifCategoria(L.invStart + i), null);
-  });
-  linhaTotalSecao(sheet, L.invTotal, 'TOTAL APORTES', TAG.invAporte, null, false);
-
-  // Rendimento do mês — entrada manual, verde=ganho / vermelho=perda
-  sheet.getRange(L.invRendRow, 1).setValue('Rendimento do mês');
-  sheet.getRange(L.invRendRow, 3).setNumberFormat(FMT_BRL);
-  setTag(sheet, L.invRendRow, '');
-  formatacaoDiferenca(sheet, `C${L.invRendRow}:C${L.invRendRow}`);
-
-  // ── SALDO DO MÊS ───────────────────────────────────────────────────────────
-  sheet.setRowHeight(L.saldoRow, 40);
-  sheet.getRange(L.saldoRow, 1, 1, 4).setBackground(COR.saldo);
-  sheet.getRange(L.saldoRow, 1).setValue('SALDO DO MÊS')
-    .setFontColor(COR.saldoFonte).setFontWeight('bold').setFontSize(12);
-  sheet.getRange(L.saldoRow, 3)
-    .setFormula(
-      `=SUMIF($E:$E;"${TAG.entrada}";$C:$C)` +
-      `-SUMIF($E:$E;"${TAG.fixo}";$C:$C)` +
-      `-SUMIF($E:$E;"${TAG.variavel}";$C:$C)` +
-      `-SUMIF($E:$E;"${TAG.invAporte}";$C:$C)`
-    )
-    .setFontColor(COR.saldoFonte).setFontWeight('bold').setFontSize(12)
-    .setNumberFormat(FMT_BRL);
-  formatacaoDiferenca(sheet, `C${L.saldoRow}:C${L.saldoRow}`);
+  // ── Resumo (todas as seções acima do log) ────────────────────────────────
+  reconstruirResumo(sheet);
 
   // ── LOG DE TRANSAÇÕES ──────────────────────────────────────────────────────
   sheet.setRowHeight(LOG_ROW - 2, 32);
@@ -706,11 +638,7 @@ function montarAbaMensal(sheet, mesNome, ano) {
     SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(true).build()
   );
 
-  aplicarCinzaFormulas(sheet, L);
-  aplicarProtecao(sheet, L);
-
   sheet.setFrozenRows(1);
-  sheet.getRange(1, 1, LOG_ROW - 3, 4).setVerticalAlignment('middle');
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -1036,6 +964,90 @@ function calcLayout() {
   L.saldoRow     = L.invRendRow + 2;
 
   return L;
+}
+
+// Reconstrói as seções de resumo (saldo anterior → saldo do mês) sem tocar no log.
+// Chamado por montarAbaMensal (aba nova) e atualizarDropdowns (aba existente com dados).
+function reconstruirResumo(sheet) {
+  const L = calcLayout();
+
+  // Limpa área do resumo (entre título e log), preservando log
+  sheet.getRange(2, 1, LOG_ROW - 3, 5).clearContent().clearFormat()
+    .clearDataValidations().setBackground(null);
+  sheet.setConditionalFormatRules([]);
+
+  // ── SALDO ANTERIOR ─────────────────────────────────────────────────────────
+  cabecalhoSecao(sheet, L.posHeader, 'SALDO ANTERIOR', COR.secao, COR.secaoFonte, ['', '', 'Saldo atual', '']);
+  ITEMS_POS_FINANCEIRA.forEach((item, i) => {
+    linhaItem(sheet, L.posStart + i, item, TAG.posFinanceira, null, null, null);
+    sheet.getRange(L.posStart + i, 3).setNumberFormat(FMT_BRL);
+  });
+  sheet.getRange(L.posTotal, 1, 1, 4).setBackground(COR.total);
+  sheet.getRange(L.posTotal, 1).setValue('TOTAL ATIVOS FINANCEIROS').setFontWeight('bold');
+  sheet.getRange(L.posTotal, 3)
+    .setFormula(`=SUMIF($E:$E;"${TAG.posFinanceira}";$C:$C)`)
+    .setFontWeight('bold').setNumberFormat(FMT_BRL);
+
+  // ── ENTRADAS ───────────────────────────────────────────────────────────────
+  cabecalhoSecao(sheet, L.entHeader, 'ENTRADAS', COR.secao, COR.secaoFonte, ['', '', 'Real', '']);
+  CAT_ENTRADA.forEach((cat, i) => {
+    linhaItem(sheet, L.entStart + i, cat, TAG.entrada, null, sumifCategoria(L.entStart + i), null);
+  });
+  linhaTotalSecao(sheet, L.entTotal, 'TOTAL ENTRADAS', TAG.entrada, null, false);
+
+  // ── GASTOS FIXOS ───────────────────────────────────────────────────────────
+  montarSecaoGastos(sheet, L.fixHeader, 'GASTOS FIXOS', L.fixStart, CAT_FIXO, TAG.fixo, L.fixTotal, 'TOTAL FIXOS');
+
+  // ── GASTOS VARIÁVEIS ───────────────────────────────────────────────────────
+  montarSecaoGastos(sheet, L.varHeader, 'GASTOS VARIÁVEIS', L.varStart, CAT_VARIAVEL, TAG.variavel, L.varTotal, 'TOTAL VARIÁVEIS');
+
+  formatacaoDiferenca(sheet, `D${L.fixStart}:D${L.varTotal}`);
+
+  // ── PJ / CNPJ ──────────────────────────────────────────────────────────────
+  cabecalhoSecao(sheet, L.pjHeader, 'PJ / CNPJ', COR.pj, COR.pjFonte, ['', '', 'Real', '']);
+  linhaItem(sheet, L.pjFatRow, 'Faturamento PJ', TAG.pjFat, null, sumifCategoria(L.pjFatRow), null);
+  CAT_PJ_CUSTO.forEach((cat, i) => {
+    linhaItem(sheet, L.pjCustoStart + i, cat, TAG.pjCusto, null, sumifCategoria(L.pjCustoStart + i), null);
+  });
+  sheet.getRange(L.pjSaldoRow, 1, 1, 4).setBackground(COR.pjTotal);
+  sheet.getRange(L.pjSaldoRow, 1).setValue('SALDO PJ').setFontWeight('bold');
+  sheet.getRange(L.pjSaldoRow, 3)
+    .setFormula(`=SUMIF($E:$E;"${TAG.pjFat}";$C:$C)-SUMIF($E:$E;"${TAG.pjCusto}";$C:$C)`)
+    .setFontWeight('bold').setNumberFormat(FMT_BRL);
+  formatacaoDiferenca(sheet, `C${L.pjSaldoRow}:C${L.pjSaldoRow}`);
+
+  // ── INVESTIMENTOS ──────────────────────────────────────────────────────────
+  cabecalhoSecao(sheet, L.invHeader, 'INVESTIMENTOS', COR.secao, COR.secaoFonte, ['', '', 'Valor', '']);
+  CAT_INVESTIMENTO.forEach((cat, i) => {
+    linhaItem(sheet, L.invStart + i, cat, TAG.invAporte, null, sumifCategoria(L.invStart + i), null);
+  });
+  linhaTotalSecao(sheet, L.invTotal, 'TOTAL APORTES', TAG.invAporte, null, false);
+
+  sheet.getRange(L.invRendRow, 1).setValue('Rendimento do mês');
+  sheet.getRange(L.invRendRow, 3).setNumberFormat(FMT_BRL);
+  setTag(sheet, L.invRendRow, '');
+  formatacaoDiferenca(sheet, `C${L.invRendRow}:C${L.invRendRow}`);
+
+  // ── SALDO DO MÊS ──────────────────────────────────────────────────────────
+  sheet.setRowHeight(L.saldoRow, 40);
+  sheet.getRange(L.saldoRow, 1, 1, 4).setBackground(COR.saldo);
+  sheet.getRange(L.saldoRow, 1).setValue('SALDO DO MÊS')
+    .setFontColor(COR.saldoFonte).setFontWeight('bold').setFontSize(12);
+  sheet.getRange(L.saldoRow, 3)
+    .setFormula(
+      `=SUMIF($E:$E;"${TAG.entrada}";$C:$C)` +
+      `-SUMIF($E:$E;"${TAG.fixo}";$C:$C)` +
+      `-SUMIF($E:$E;"${TAG.variavel}";$C:$C)` +
+      `-SUMIF($E:$E;"${TAG.invAporte}";$C:$C)`
+    )
+    .setFontColor(COR.saldoFonte).setFontWeight('bold').setFontSize(12)
+    .setNumberFormat(FMT_BRL);
+  formatacaoDiferenca(sheet, `C${L.saldoRow}:C${L.saldoRow}`);
+
+  // ── Formatação e proteção ──────────────────────────────────────────────────
+  aplicarCinzaFormulas(sheet, L);
+  aplicarProtecao(sheet, L);
+  sheet.getRange(1, 1, LOG_ROW - 3, 4).setVerticalAlignment('middle');
 }
 
 // Fundo cinza nas células com fórmulas automáticas — indica "não editar"

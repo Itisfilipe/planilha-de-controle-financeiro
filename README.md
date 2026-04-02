@@ -26,9 +26,7 @@ Cria uma aba mensal com duas seções (Entradas e Saídas) e um log de transaç�
 Edite os arrays `CAT_ENTRADA` e `CAT_SAIDA` no topo do script. Depois:
 
 - **Mês novo** (sem dados): crie normalmente — a nova categoria já aparece no resumo e no dropdown.
-- **Mês existente (com dados)**: use **Financeiro > Atualizar dropdowns** para adicionar a categoria ao dropdown. A nova categoria funcionará no log, mas **não aparecerá no resumo** até a aba ser recriada. Recriar a aba **apaga todos os dados existentes** nela.
-
-> **Resumo:** dropdowns são atualizados sem perda de dados. O resumo (linhas com totais) só muda ao recriar a aba, o que apaga os dados daquele mês.
+- **Mês existente (com dados)**: use **Financeiro > Atualizar dropdowns**. O resumo (seções com totais) e os dropdowns são reconstruídos automaticamente. **Os dados do log são preservados.**
 
 ---
 
@@ -111,9 +109,9 @@ const CAT_FIXO = [   // Categorias de gastos fixos
 Após alterar categorias:
 
 - **Mês novo** (sem dados): crie normalmente — as novas categorias já aparecem no resumo e no dropdown.
-- **Mês existente (com dados)**: use **Financeiro > Atualizar dropdowns** para adicionar ao dropdown. As novas categorias funcionarão no log, mas **não aparecerão no resumo** até a aba ser recriada.
+- **Mês existente (com dados)**: use **Financeiro > Atualizar categorias**. O resumo (seções com totais) e os dropdowns são reconstruídos automaticamente. **Os dados do log são preservados.**
 
-> **Atenção:** recriar uma aba existente ("Novo mês..." ou "Criar planilha completa") **apaga todos os dados** daquela aba. Dropdowns são atualizados sem perda de dados.
+> **Atenção:** recriar uma aba existente ("Novo mês..." ou "Criar planilha completa") **apaga todos os dados** daquela aba, incluindo o log.
 
 O layout das abas é calculado dinamicamente a partir dos arrays de categorias. Adicionar ou remover itens em qualquer array (ex: `CAT_FIXO`, `CAT_INVESTIMENTO`, `ITEMS_POS_FINANCEIRA`) ajusta automaticamente todas as posições de linha ao recriar.
 
