@@ -117,10 +117,15 @@ function criarMesAtual() {
   const ano  = hoje.getFullYear();
   const nome = `${mes.abrev}/${ano}`;
 
+  if (ss.getSheetByName(nome)) {
+    ui.alert(`A aba "${nome}" já existe. Use-a diretamente ou exclua-a manualmente antes de recriar.`);
+    ss.setActiveSheet(ss.getSheetByName(nome));
+    return;
+  }
+
   const ok = ui.alert(
     'Criar Mês Atual',
-    `Criar a aba "${nome}" com resumo e log de transações?` +
-    (ss.getSheetByName(nome) ? `\n\nAviso: a aba "${nome}" já existe e será recriada.` : ''),
+    `Criar a aba "${nome}" com resumo e log de transações?`,
     ui.ButtonSet.YES_NO
   );
   if (ok !== ui.Button.YES) return;
@@ -179,8 +184,9 @@ function criarNovoMes() {
   const nomeAba = `${abrev}/${anoInput}`;
 
   if (ss.getSheetByName(nomeAba)) {
-    const ok = ui.alert(`A aba "${nomeAba}" já existe.`, 'Recriar? (dados serão perdidos)', ui.ButtonSet.YES_NO);
-    if (ok !== ui.Button.YES) return;
+    ui.alert(`A aba "${nomeAba}" já existe. Use-a diretamente ou exclua-a manualmente antes de recriar.`);
+    ss.setActiveSheet(ss.getSheetByName(nomeAba));
+    return;
   }
 
   try { ss.setSpreadsheetLocale('pt_BR'); } catch (e) {}
@@ -362,19 +368,21 @@ function montarAba(sheet, mesNome, ano) {
 
   // ── LOG DE TRANSAÇÕES ──────────────────────────────────────────────────────
   sheet.setRowHeight(LOG_ROW - 2, 32);
-  sheet.getRange(LOG_ROW - 2, 1, 1, 4).merge()
+  sheet.getRange(LOG_ROW - 2, 1, 1, 5).merge()
     .setValue('LOG DE TRANSAÇÕES')
     .setBackground(COR.titulo).setFontColor(COR.tituloFonte)
     .setFontWeight('bold').setFontSize(11)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sheet.setRowHeight(LOG_ROW - 1, 28);
-  ['Data', 'Descrição', 'Categoria', 'Valor'].forEach((h, i) => {
+  ['Data', 'Descrição', 'Categoria', 'Valor', 'Parcela?'].forEach((h, i) => {
     sheet.getRange(LOG_ROW - 1, i + 1)
       .setValue(h)
       .setBackground(COR.logHeader).setFontColor(COR.logFonte)
       .setFontWeight('bold').setHorizontalAlignment('center');
   });
+
+  sheet.setColumnWidth(5, 80);
 
   sheet.getRange(`A${LOG_ROW}:A2000`).setNumberFormat('dd/mm/yyyy');
   sheet.getRange(`D${LOG_ROW}:D2000`).setNumberFormat(FMT_BRL);
@@ -383,6 +391,13 @@ function montarAba(sheet, mesNome, ano) {
     SpreadsheetApp.newDataValidation()
       .requireValueInList(CATEGORIAS, true)
       .setAllowInvalid(false)
+      .build()
+  );
+
+  sheet.getRange(`E${LOG_ROW}:E2000`).setDataValidation(
+    SpreadsheetApp.newDataValidation()
+      .requireValueInList(['Sim', 'Não'], true)
+      .setAllowInvalid(true)
       .build()
   );
 
@@ -465,7 +480,7 @@ function reconstruirResumo(sheet) {
     .setDescription('Células com fórmula — edite apenas o LOG.');
   protection.setWarningOnly(true);
   protection.setUnprotectedRanges([
-    sheet.getRange(`A${LOG_ROW}:D2000`),
+    sheet.getRange(`A${LOG_ROW}:E2000`),
   ]);
 
   sheet.getRange(1, 1, saldoRow, 4).setVerticalAlignment('middle');

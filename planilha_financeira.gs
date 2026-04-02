@@ -268,8 +268,9 @@ function criarNovoMes() {
   const nomeMes = `${abrev}/${anoInput}`;
 
   if (ss.getSheetByName(nomeMes)) {
-    const ok = ui.alert(`A aba "${nomeMes}" já existe.`, 'Recriar do zero? (dados serão perdidos)', ui.ButtonSet.YES_NO);
-    if (ok !== ui.Button.YES) return;
+    ui.alert(`A aba "${nomeMes}" já existe. Use-a diretamente ou exclua-a manualmente antes de recriar.`);
+    ss.setActiveSheet(ss.getSheetByName(nomeMes));
+    return;
   }
 
   const sheetNova = getOrCreateSheet(ss, nomeMes);
@@ -401,11 +402,15 @@ function criarProximoMes() {
   const anoP  = idx === 11 ? anoH + 1 : anoH;
   const nomeP = `${MESES[idxP].abrev}/${anoP}`;
 
+  if (ss.getSheetByName(nomeP)) {
+    ui.alert(`A aba "${nomeP}" já existe. Use-a diretamente ou exclua-a manualmente antes de recriar.`);
+    ss.setActiveSheet(ss.getSheetByName(nomeP));
+    return;
+  }
+
   const ok = ui.alert(
     'Criar Próximo Mês',
-    `O que será feito:\n• Criar a aba "${nomeP}" com resumo, budget e log de transações.` +
-    (ss.getSheetByName(nomeP) ? `\n\nAviso: a aba "${nomeP}" já existe e será recriada (dados serão perdidos).` : '') +
-    '\n\nContinuar?',
+    `Criar a aba "${nomeP}" com resumo, budget e log de transações?`,
     ui.ButtonSet.YES_NO
   );
   if (ok !== ui.Button.YES) return;
@@ -784,19 +789,21 @@ function montarAbaMensal(sheet, mesNome, ano) {
 
   // ── LOG DE TRANSAÇÕES ──────────────────────────────────────────────────────
   sheet.setRowHeight(LOG_ROW - 2, 32);
-  sheet.getRange(LOG_ROW - 2, 1, 1, 4).merge()
+  sheet.getRange(LOG_ROW - 2, 1, 1, 6).merge()
     .setValue('LOG DE TRANSAÇÕES')
     .setBackground(COR.titulo).setFontColor(COR.tituloFonte)
     .setFontWeight('bold').setFontSize(11)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sheet.setRowHeight(LOG_ROW - 1, 28);
-  ['Data', 'Descrição', 'Categoria', 'Valor'].forEach((h, i) => {
-    sheet.getRange(LOG_ROW - 1, i + 1)
+  // Cols A-D + F (col E é tag invisível)
+  [['Data',1],['Descrição',2],['Categoria',3],['Valor',4],['Parcela?',6]].forEach(([h, col]) => {
+    sheet.getRange(LOG_ROW - 1, col)
       .setValue(h)
       .setBackground(COR.logHeader).setFontColor(COR.logFonte)
       .setFontWeight('bold').setHorizontalAlignment('center');
   });
+  sheet.setColumnWidth(6, 80);
 
   sheet.getRange(`A${LOG_ROW}:A2000`).setNumberFormat('dd/mm/yyyy');
   sheet.getRange(`D${LOG_ROW}:D2000`).setNumberFormat(FMT_BRL);
@@ -805,6 +812,13 @@ function montarAbaMensal(sheet, mesNome, ano) {
     SpreadsheetApp.newDataValidation()
       .requireValueInList(CATEGORIAS, true)
       .setAllowInvalid(false)
+      .build()
+  );
+
+  sheet.getRange(`F${LOG_ROW}:F2000`).setDataValidation(
+    SpreadsheetApp.newDataValidation()
+      .requireValueInList(['Sim', 'Não'], true)
+      .setAllowInvalid(true)
       .build()
   );
 
@@ -1307,7 +1321,7 @@ function aplicarProtecao(sheet, L) {
     sheet.getRange(`B${L.fixStart}:B${L.fixEnd}`),      // Budget Gastos Fixos
     sheet.getRange(`B${L.varStart}:B${L.varEnd}`),      // Budget Gastos Variáveis
     sheet.getRange(`C${L.invRendRow}`),                  // Rendimento do mês
-    sheet.getRange(`A${LOG_ROW}:D2000`),                 // Log de transações
+    sheet.getRange(`A${LOG_ROW}:F2000`),                 // Log de transações (inclui Parcela?)
   ]);
 }
 
