@@ -13,7 +13,7 @@ Planilha de controle financeiro pessoal e empresarial gerada automaticamente no 
 
 ## Versão Simples (`planilha_simples.gs`)
 
-Cria uma aba mensal com duas seções (Entradas e Saídas) e um log de transações. Os totais por categoria atualizam automaticamente.
+Cria uma aba mensal com duas seções (Entradas e Saídas) e um log de transações. Os totais por categoria atualizam automaticamente. Inclui aba **Dívidas** para acompanhar parcelas e financiamentos.
 
 ### Como usar
 1. Crie um Google Sheets novo
@@ -42,6 +42,7 @@ Edite os arrays `CAT_ENTRADA` e `CAT_SAIDA` no topo do script. Depois:
 - **Gráficos**: saldo PF/PJ (linha), entradas vs gastos (barras), PJ (barras), ativos financeiros (linha), gastos fixos/variáveis (pizza), donut de gastos por categoria em cada aba mensal
 - **Estrutura flexível**: adicionar ou remover categorias nos arrays ajusta o layout automaticamente
 - **Células protegidas**: fórmulas ficam em cinza e exibem aviso se editadas acidentalmente
+- **Aba Dívidas**: acompanhamento de parcelas e financiamentos com cálculo automático de saldo devedor
 - **Fechar/Reabrir mês**: bloqueia edição de meses finalizados com indicador visual (aba verde)
 - **Seletor de data** no log de transações
 - **Locale pt_BR**: datas no formato dd/mm/aaaa, valores em R$, separador decimal vírgula

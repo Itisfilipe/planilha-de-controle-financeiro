@@ -52,6 +52,7 @@ const CAT_SAIDA = [
   'Educação',
   'Lazer',
   'Assinaturas',
+  'Cartão de crédito',
   'Vestuário',
   'Outros',
 ];
@@ -99,6 +100,8 @@ function onOpen() {
     .addSeparator()
     .addItem('Resumo do mês',                     'resumoMes')
     .addItem('Atualizar dropdowns',               'atualizarDropdowns')
+    .addSeparator()
+    .addItem('Criar / atualizar aba Dívidas',     'criarAbaDividas')
     .addSeparator()
     .addItem('Instruções de uso',                 'mostrarInstrucoes')
     .addToUi();
@@ -408,6 +411,100 @@ function reconstruirResumo(sheet) {
   ]);
 
   sheet.getRange(1, 1, saldoRow, 4).setVerticalAlignment('middle');
+}
+
+// ─── ABA DÍVIDAS ──────────────────────────────────────────────────────────────
+
+function criarAbaDividas() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const ok = ui.alert(
+    'Dívidas e Parcelas',
+    'Criar (ou recriar) a aba "Dívidas" para acompanhar parcelas e financiamentos?\n\n' +
+    'Se a aba já existir, os dados serão mantidos — apenas o cabeçalho e fórmulas serão atualizados.',
+    ui.ButtonSet.YES_NO
+  );
+  if (ok !== ui.Button.YES) return;
+
+  let sheet = ss.getSheetByName('Dívidas');
+  const isNew = !sheet;
+  if (isNew) {
+    sheet = ss.insertSheet('Dívidas');
+  }
+
+  // Colunas: A=Descrição, B=Valor total, C=Parcelas, D=Valor mensal, E=Início (mês/ano), F=Parcelas pagas, G=Parcelas restantes, H=Saldo devedor
+  const headers = ['Descrição', 'Valor total', 'Parcelas', 'Valor mensal', 'Início', 'Parcelas pagas', 'Restantes', 'Saldo devedor'];
+  const widths  = [220, 130, 80, 130, 100, 110, 100, 140];
+
+  widths.forEach((w, i) => sheet.setColumnWidth(i + 1, w));
+
+  // Título
+  sheet.setRowHeight(1, 42);
+  if (isNew) {
+    sheet.getRange(1, 1, 1, 8).merge()
+      .setValue('DÍVIDAS E PARCELAS')
+      .setBackground(COR.titulo).setFontColor(COR.tituloFonte)
+      .setFontWeight('bold').setFontSize(13)
+      .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  }
+
+  // Cabeçalhos (row 2) — sempre reescrever para atualizar
+  sheet.setRowHeight(2, 28);
+  headers.forEach((h, i) => {
+    sheet.getRange(2, i + 1)
+      .setValue(h)
+      .setBackground(COR.secao).setFontColor(COR.secaoFonte)
+      .setFontWeight('bold').setHorizontalAlignment('center');
+  });
+
+  // Formatos e fórmulas nas linhas de dados (3 em diante)
+  const dataRange = 500; // linhas disponíveis
+  sheet.getRange('B3:B' + dataRange).setNumberFormat(FMT_BRL);
+  sheet.getRange('D3:D' + dataRange).setNumberFormat(FMT_BRL);
+  sheet.getRange('H3:H' + dataRange).setNumberFormat(FMT_BRL);
+
+  // Fórmulas automáticas para cada linha de dados
+  for (let r = 3; r <= 100; r++) {
+    // D = Valor mensal = Valor total / Parcelas (se preenchido)
+    sheet.getRange(r, 4).setFormula(`=IF(AND(B${r}<>"";C${r}<>"");B${r}/C${r};"")`);
+    // G = Restantes = Parcelas - Pagas (se preenchido)
+    sheet.getRange(r, 7).setFormula(`=IF(AND(C${r}<>"";F${r}<>"");C${r}-F${r};"")`);
+    // H = Saldo devedor = Valor mensal * Restantes (se preenchido)
+    sheet.getRange(r, 8).setFormula(`=IF(AND(D${r}<>"";G${r}<>"");D${r}*G${r};"")`);
+  }
+
+  // Linha de totais
+  const totalRow = 102;
+  sheet.getRange(totalRow, 1).setValue('TOTAIS').setFontWeight('bold');
+  sheet.getRange(totalRow, 1, 1, 8).setBackground(COR.total);
+  // Total valor mensal
+  sheet.getRange(totalRow, 4)
+    .setFormula(`=SUM(D3:D101)`)
+    .setFontWeight('bold').setNumberFormat(FMT_BRL);
+  // Total saldo devedor
+  sheet.getRange(totalRow, 8)
+    .setFormula(`=SUM(H3:H101)`)
+    .setFontWeight('bold').setNumberFormat(FMT_BRL);
+
+  // Formatação cinza nas colunas com fórmula
+  sheet.getRange('D3:D101').setBackground(COR.protegido);
+  sheet.getRange('G3:G101').setBackground(COR.protegido);
+  sheet.getRange('H3:H101').setBackground(COR.protegido);
+
+  // Proteção com aviso
+  sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET).forEach(p => p.remove());
+  const protection = sheet.protect()
+    .setDescription('Colunas D, G e H contêm fórmulas. Edite A, B, C, E e F.');
+  protection.setWarningOnly(true);
+  protection.setUnprotectedRanges([
+    sheet.getRange('A3:C101'),  // Descrição, Valor total, Parcelas
+    sheet.getRange('E3:F101'),  // Início, Parcelas pagas
+  ]);
+
+  sheet.setFrozenRows(2);
+  ss.setActiveSheet(sheet);
+  ui.alert('Aba "Dívidas" pronta!\n\nPreencha: Descrição, Valor total, Parcelas, Início e Parcelas pagas.\nO sistema calcula valor mensal, restantes e saldo devedor.');
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
