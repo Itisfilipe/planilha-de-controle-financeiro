@@ -9,6 +9,25 @@ Planilha de controle financeiro pessoal e empresarial gerada automaticamente no 
 | **Completa** | `planilha_financeira.gs` | Freelancers e empresários brasileiros (PJ/Lucro Presumido) que faturam para o exterior. Dashboard, gráficos, budget, investimentos, PJ. |
 | **Simples** | `planilha_simples.gs` | Qualquer pessoa que só quer anotar entradas e saídas do mês. Sem complicação. |
 
+### Comparação de funcionalidades
+
+| Funcionalidade | Simples | Completa |
+|---|:---:|:---:|
+| Entradas e saídas por categoria | x | x |
+| Log de transações com dropdown | x | x |
+| Dívidas com abate automático | x | x |
+| Aba "Como usar" | x | x |
+| Atualizar categorias (preserva log) | x | x |
+| Budget (planejado vs real) | | x |
+| Seção PJ / CNPJ | | x |
+| Investimentos por tipo | | x |
+| Saldo Anterior (snapshot mensal) | | x |
+| Dashboard com gráficos | | x |
+| Acumulado no ano (YTD) | | x |
+| Fechar / Reabrir mês | | x |
+| Copiar budget do mês anterior | | x |
+| 12 abas + Dashboard automático | | x |
+
 ---
 
 ## Versão Simples (`planilha_simples.gs`)
