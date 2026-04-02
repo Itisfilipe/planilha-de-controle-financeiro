@@ -77,17 +77,25 @@ O script configura automaticamente o locale para **pt_BR**. Todas as fórmulas u
 
 Funcionalidades para implementar no futuro:
 
+### Abas independentes
+- [ ] **Aba Patrimônio** — tudo que você possui e que pode valorizar ou desvalorizar. Aba separada (como Dívidas), atemporal. Categorias: ativos financeiros (conta corrente, renda fixa, renda variável, cripto), bens (carro, imóvel). Cada item com valor atual atualizável. Total patrimônio líquido = Patrimônio − Dívidas.
+
+### Melhorias nas abas mensais
 - [ ] **Budget (planejado vs real)** — coluna Budget nas seções de gastos, com diferença automática
+- [ ] **Saldo Anterior** — snapshot mensal de saldos (conta corrente, investimentos) no topo da aba
 - [ ] **Seção PJ / CNPJ** — faturamento, impostos (GPS, IRRF, IRPJ, CSLL, DARF), custos e saldo PJ
-- [ ] **Investimentos por tipo** — aportes em renda fixa, variável, cripto, etc. com rendimento mensal
-- [ ] **Saldo Anterior** — snapshot mensal de saldos (conta corrente PF/PJ, investimentos)
-- [ ] **Dashboard anual** — visão consolidada do ano com totais por mês
-- [ ] **Gráficos no Dashboard** — saldo mensal (linha), entradas vs gastos (barras), gastos fixos/variáveis (pizza)
-- [ ] **Acumulado no ano (YTD)** — tabela com totais acumulados mês a mês
-- [ ] **Fechar / Reabrir mês** — bloquear edição de meses finalizados (aba fica verde)
 - [ ] **Copiar budget do mês anterior** — reaproveitar valores de budget entre meses
+- [ ] **Fechar / Reabrir mês** — bloquear edição de meses finalizados (aba fica verde)
 - [ ] **12 abas + Dashboard automático** — criar ano inteiro de uma vez
-- [ ] **Integração Dívidas ↔ Log** — descrições de dívidas como categorias no dropdown, contagem automática de parcelas pagas via COUNTIF
+
+### Dashboard e visão geral
+- [ ] **Dashboard anual** — visão consolidada do ano com totais por mês
+- [ ] **Gráficos no Dashboard** — saldo mensal (linha), entradas vs gastos (barras), gastos por categoria (pizza)
+- [ ] **Acumulado no ano (YTD)** — tabela com totais acumulados mês a mês
+
+### Integrações
+- [ ] **Integração Dívidas ↔ Log** — descrições de dívidas como categorias no dropdown, contagem automática de parcelas pagas
+- [ ] **Patrimônio líquido automático** — Patrimônio − Dívidas calculado entre as abas
 
 ## Licença
 
