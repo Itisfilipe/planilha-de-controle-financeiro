@@ -23,7 +23,12 @@ Cria uma aba mensal com duas seções (Entradas e Saídas) e um log de transaç�
 5. Menu **Financeiro > Criar mês atual**
 
 ### Personalizar categorias
-Edite os arrays `CAT_ENTRADA` e `CAT_SAIDA` no topo do script e use **Financeiro > Atualizar dropdowns**.
+Edite os arrays `CAT_ENTRADA` e `CAT_SAIDA` no topo do script. Depois:
+
+- **Mês novo** (sem dados): crie normalmente — a nova categoria já aparece no resumo e no dropdown.
+- **Mês existente (com dados)**: use **Financeiro > Atualizar dropdowns** para adicionar a categoria ao dropdown. A nova categoria funcionará no log, mas **não aparecerá no resumo** até a aba ser recriada. Recriar a aba **apaga todos os dados existentes** nela.
+
+> **Resumo:** dropdowns são atualizados sem perda de dados. O resumo (linhas com totais) só muda ao recriar a aba, o que apaga os dados daquele mês.
 
 ---
 
@@ -103,9 +108,14 @@ const CAT_FIXO = [   // Categorias de gastos fixos
 ];
 ```
 
-Após alterar categorias, execute **Financeiro > Atualizar dropdowns** para propagar a mudança.
+Após alterar categorias:
 
-O layout das abas é calculado dinamicamente a partir dos arrays de categorias. Adicionar ou remover itens em qualquer array (ex: `CAT_FIXO`, `CAT_INVESTIMENTO`, `ITEMS_POS_FINANCEIRA`) ajusta automaticamente todas as posições de linha — basta recriar a planilha.
+- **Mês novo** (sem dados): crie normalmente — as novas categorias já aparecem no resumo e no dropdown.
+- **Mês existente (com dados)**: use **Financeiro > Atualizar dropdowns** para adicionar ao dropdown. As novas categorias funcionarão no log, mas **não aparecerão no resumo** até a aba ser recriada.
+
+> **Atenção:** recriar uma aba existente ("Novo mês..." ou "Criar planilha completa") **apaga todos os dados** daquela aba. Dropdowns são atualizados sem perda de dados.
+
+O layout das abas é calculado dinamicamente a partir dos arrays de categorias. Adicionar ou remover itens em qualquer array (ex: `CAT_FIXO`, `CAT_INVESTIMENTO`, `ITEMS_POS_FINANCEIRA`) ajusta automaticamente todas as posições de linha ao recriar.
 
 ## Novo ano
 
