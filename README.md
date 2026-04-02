@@ -17,7 +17,7 @@ Planilha de controle financeiro pessoal gerada automaticamente no Google Sheets 
 
 1. Crie um Google Sheets novo
 2. Vá em **Extensões > Apps Script**
-3. Cole o conteúdo de `planilha_simples.gs` e salve
+3. Cole o conteúdo de `planilha.gs` e salve
 4. Recarregue a planilha
 5. Menu **Financeiro > Criar mês atual**
 
