@@ -411,10 +411,33 @@ function montarAba(sheet, mesNome, ano) {
 // Reconstrói as seções de resumo (entradas, saídas, saldo) sem tocar no log.
 // Chamado por montarAba (aba nova) e atualizarDropdowns (aba existente).
 function reconstruirResumo(sheet) {
-  // Limpa a área do resumo (entre título e log), preservando o log
-  // LOG_ROW - 4: para antes do título "LOG DE TRANSAÇÕES" (que está em LOG_ROW - 2)
-  sheet.getRange(2, 1, LOG_ROW - 4, 5).clearContent().clearFormat()
-    .clearDataValidations().setBackground(null);
+  // Detecta posição antiga do log (pode diferir se categorias mudaram)
+  const totalRows = sheet.getLastRow();
+  let oldLogDataRow = 0;
+  if (totalRows > 0) {
+    const colA = sheet.getRange(1, 1, Math.min(totalRows, LOG_ROW + 20), 1).getValues();
+    for (let i = 0; i < colA.length; i++) {
+      if (colA[i][0] === 'LOG DE TRANSAÇÕES') { oldLogDataRow = i + 3; break; }
+    }
+  }
+
+  // Se o log mudou de posição, migra os dados
+  let savedLogData = null;
+  if (oldLogDataRow > 0 && oldLogDataRow !== LOG_ROW) {
+    const logLastRow = sheet.getLastRow();
+    if (logLastRow >= oldLogDataRow) {
+      const numCols = sheet.getLastColumn() || 5;
+      savedLogData = sheet.getRange(oldLogDataRow, 1, logLastRow - oldLogDataRow + 1, numCols).getValues();
+      sheet.getRange(oldLogDataRow - 2, 1, logLastRow - oldLogDataRow + 3, numCols).clearContent().clearFormat();
+    }
+  }
+
+  // Limpa área do resumo (entre título e log title bar)
+  const clearEnd = Math.min(LOG_ROW - 4, totalRows);
+  if (clearEnd >= 2) {
+    sheet.getRange(2, 1, clearEnd - 1, 5).clearContent().clearFormat()
+      .clearDataValidations().setBackground(null);
+  }
   sheet.setConditionalFormatRules([]);
 
   // Posições calculadas
@@ -484,6 +507,11 @@ function reconstruirResumo(sheet) {
   ]);
 
   sheet.getRange(1, 1, saldoRow, 4).setVerticalAlignment('middle');
+
+  // Restaura dados do log migrados (se o log mudou de posição)
+  if (savedLogData && savedLogData.length > 0) {
+    sheet.getRange(LOG_ROW, 1, savedLogData.length, savedLogData[0].length).setValues(savedLogData);
+  }
 }
 
 // ─── ABA DÍVIDAS ──────────────────────────────────────────────────────────────
