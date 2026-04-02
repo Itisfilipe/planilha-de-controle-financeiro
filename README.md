@@ -96,6 +96,13 @@ Funcionalidades para implementar no futuro:
 - [ ] **Integração Dívidas ↔ Log** — descrições de dívidas como categorias no dropdown, contagem automática de parcelas pagas
 - [ ] **Patrimônio líquido automático** — Patrimônio − Dívidas calculado entre as abas
 
+### Usabilidade
+- [ ] **Gastos recorrentes** — auto-preencher lançamentos fixos ao criar um novo mês (aluguel, assinaturas, etc.)
+- [ ] **Resumo anual por categoria** — quanto gastou em cada categoria ao longo do ano
+- [ ] **Metas de economia** — definir quanto quer poupar por mês e acompanhar progresso
+- [ ] **Alertas de vencimento** — notificação quando uma parcela está próxima do vencimento (via trigger)
+- [ ] **Exportar resumo em PDF** — gerar relatório mensal formatado
+
 ## Licença
 
 MIT

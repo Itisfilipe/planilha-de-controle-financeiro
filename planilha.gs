@@ -1,8 +1,7 @@
 /**
- * CONTROLE FINANCEIRO SIMPLES — Google Apps Script
+ * CONTROLE FINANCEIRO — Google Apps Script
  *
- * Versão simplificada para quem só quer anotar e acompanhar
- * entradas e saídas do mês, sem complicação.
+ * Planilha de controle financeiro pessoal no Google Sheets.
  *
  * COMO USAR:
  * 1. Crie um Google Sheets novo
@@ -13,7 +12,7 @@
  *
  * PREENCHIMENTO:
  * No LOG (parte de baixo da aba), preencha:
- *   Data | Descrição | Categoria | Valor
+ *   Data | Descrição | Categoria | Valor | Parcela? (Sim/Não)
  * Os totais por categoria atualizam automaticamente.
  */
 
@@ -275,41 +274,74 @@ function criarAbaComoUsar() {
   sheet.setTabColor('#2196F3');
 
   const linhas = [
-    ['COMO USAR — CONTROLE FINANCEIRO SIMPLES'],
+    ['COMO USAR — CONTROLE FINANCEIRO'],
+    [''],
+    ['COMO FUNCIONA'],
+    ['Cada mês tem sua própria aba (ex: Abr/2026). A aba é dividida em duas partes:'],
+    ['  • RESUMO (parte de cima) — totais automáticos por categoria, calculados a partir do log'],
+    ['  • LOG (parte de baixo) — onde você anota cada transação do mês'],
+    [''],
+    ['O resumo tem duas seções: ENTRADAS (dinheiro que entra) e SAÍDAS (dinheiro que sai).'],
+    ['A categoria de cada transação no log determina em qual seção ela aparece.'],
+    ['O SALDO DO MÊS = Total Entradas − Total Saídas, calculado automaticamente.'],
     [''],
     ['PREENCHIMENTO DIÁRIO'],
-    ['No LOG (parte de baixo de cada aba mensal), preencha uma linha por transação:'],
+    ['No LOG, preencha uma linha para cada transação:'],
     ['  • Coluna A — Data (seletor de data disponível)'],
-    ['  • Coluna B — Descrição (ex: "Supermercado Extra")'],
-    ['  • Coluna C — Categoria (escolha no dropdown: Salário, Alimentação, etc.)'],
-    ['  • Coluna D — Valor (sempre positivo; a categoria determina se é entrada ou saída)'],
+    ['  • Coluna B — Descrição livre (ex: "Supermercado Extra", "Salário março")'],
+    ['  • Coluna C — Categoria (dropdown: Salário, Alimentação, Transporte, etc.)'],
+    ['  • Coluna D — Valor (sempre POSITIVO — o sistema sabe se é entrada ou saída pela categoria)'],
+    ['  • Coluna E — Parcela? (Sim/Não) — marque "Sim" se for pagamento de parcela de dívida'],
     [''],
-    ['Os totais por categoria no resumo (parte de cima) atualizam automaticamente.'],
+    ['IMPORTANTE: o valor é sempre positivo. Se você gastou R$ 50 no mercado, coloque 50 (não -50).'],
+    ['A categoria "Alimentação" está em SAÍDAS, então o sistema já sabe que é um gasto.'],
+    [''],
+    ['O QUE NÃO FUNCIONA AUTOMATICAMENTE'],
+    ['  • A aba Dívidas NÃO atualiza sozinha a partir do log — você precisa atualizar'],
+    ['    "Parcelas pagas" manualmente na aba Dívidas a cada mês.'],
+    ['  • Não há integração entre meses — cada aba é independente.'],
+    ['  • Não há dashboard ou gráficos (ainda) — use o "Resumo do mês" no menu.'],
     [''],
     ['MENU FINANCEIRO'],
-    ['  • Criar mês atual — cria a aba do mês corrente'],
-    ['  • Novo mês... — cria qualquer mês/ano (ex: Jan/2027)'],
-    ['  • Resumo do mês — exibe totais de entradas, saídas e saldo'],
-    ['  • Atualizar categorias — recria o resumo com as categorias atuais (log preservado)'],
-    ['  • Criar / atualizar aba Dívidas — acompanhe parcelas e financiamentos'],
+    ['  • Criar mês atual — cria a aba do mês corrente (não sobrescreve se já existir)'],
+    ['  • Novo mês... — cria qualquer mês/ano (ex: Jan/2027, Dez/2025)'],
+    ['  • Resumo do mês — popup com totais rápidos (entradas, saídas, saldo)'],
+    ['  • Atualizar categorias — recria o resumo com as categorias atuais do script'],
+    ['    (dados do log são preservados e migrados se o layout mudou)'],
+    ['  • Criar / atualizar aba Dívidas — cria ou atualiza a aba de parcelas'],
+    ['  • Como usar (abrir aba) — abre esta aba'],
     [''],
     ['PERSONALIZAR CATEGORIAS'],
-    ['  1. Abra Extensões > Apps Script'],
-    ['  2. Edite os arrays CAT_ENTRADA e CAT_SAIDA no topo do código'],
-    ['  3. Salve e volte para a planilha'],
-    ['  4. Use Financeiro > Atualizar categorias'],
-    ['  O resumo é reconstruído com as novas categorias. Dados do log são preservados.'],
+    ['  As categorias são definidas no código (Extensões > Apps Script):'],
+    ['    CAT_ENTRADA = [\'Salário\', \'Freelance\', \'Outros entrada\']'],
+    ['    CAT_SAIDA = [\'Moradia\', \'Alimentação\', \'Transporte\', ...]'],
+    ['  Para adicionar ou remover: edite o array, salve, e use Financeiro > Atualizar categorias.'],
+    ['  O resumo é reconstruído e os dados do log são preservados.'],
+    ['  Se o layout mudou (mais ou menos categorias), o log é migrado automaticamente.'],
     [''],
     ['DÍVIDAS E PARCELAS'],
-    ['  Use Financeiro > Criar / atualizar aba Dívidas.'],
-    ['  Preencha: Descrição, Valor total, Parcelas, Início e Parcelas pagas.'],
-    ['  Atualize "Parcelas pagas" manualmente todo mês.'],
-    ['  Status muda para "Quitada" automaticamente quando Restantes chega a zero.'],
-    ['  No log mensal, lance o pagamento como saída normal (ex: "Cartão de crédito").'],
+    ['  A aba Dívidas é INDEPENDENTE das abas mensais — serve para acompanhar'],
+    ['  parcelas e financiamentos ao longo do tempo.'],
+    [''],
+    ['  Para cada dívida, preencha:'],
+    ['    Descrição (ex: "Geladeira Nubank") | Valor total | Parcelas | Início'],
+    ['  E atualize todo mês:'],
+    ['    Parcelas pagas — quantas parcelas você já pagou no total'],
+    [''],
+    ['  O sistema calcula automaticamente:'],
+    ['    Valor mensal = Valor total ÷ Parcelas'],
+    ['    Restantes = Parcelas − Parcelas pagas'],
+    ['    Saldo devedor = Valor mensal × Restantes'],
+    ['    Status = "Ativa" ou "Quitada" (quando Restantes ≤ 0)'],
+    [''],
+    ['  No log mensal, lance o pagamento da parcela como saída normal'],
+    ['  (ex: categoria "Cartão de crédito") e marque "Parcela? = Sim".'],
+    ['  Isso garante que o gasto aparece no saldo do mês E você sabe que é parcela.'],
     [''],
     ['CÉLULAS EM CINZA'],
-    ['  Contêm fórmulas automáticas — não edite.'],
-    ['  Um aviso aparecerá se você tentar modificar essas células.'],
+    ['  Contêm fórmulas automáticas — NÃO edite.'],
+    ['  Se tentar editar, um aviso aparecerá pedindo confirmação.'],
+    ['  Áreas editáveis: log de transações e Parcelas pagas na aba Dívidas.'],
     [''],
     ['DICA: esta aba pode ser excluída sem afetar a planilha. Para recriá-la,'],
     ['use Financeiro > Como usar (abrir aba).'],
@@ -324,7 +356,7 @@ function criarAbaComoUsar() {
   sheet.setRowHeight(1, 42);
 
   // Seções
-  [3, 12, 19, 26, 33].forEach(r => {
+  [3, 12, 23, 29, 38, 46, 65].forEach(r => {
     sheet.getRange(r, 1).setFontSize(11).setFontWeight('bold')
       .setFontColor(COR.secao);
   });
