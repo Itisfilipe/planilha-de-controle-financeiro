@@ -381,7 +381,8 @@ function reconstruirResumo(sheet) {
   let savedLogData = null;
   if (oldLogDataRow > 0 && oldLogDataRow !== LOG_ROW && totalRows >= oldLogDataRow) {
     savedLogData = sheet.getRange(oldLogDataRow, 1, totalRows - oldLogDataRow + 1, 5).getValues();
-    sheet.getRange(oldLogDataRow - 2, 1, totalRows - oldLogDataRow + 3, 5).clearContent().clearFormat();
+    sheet.getRange(oldLogDataRow - 2, 1, totalRows - oldLogDataRow + 3, 5)
+      .clearContent().clearFormat().clearDataValidations();
   }
 
   // Limpa tudo entre título (row 1) e log dados (LOG_ROW), incluindo gap rows e log title/headers
