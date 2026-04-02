@@ -703,7 +703,7 @@ function criarAbaDividas() {
   sheet.getRange('H3:H500').setNumberFormat(FMT_BRL);
 
   // Fórmula COUNTIF: conta pagamentos no log de todos os meses do ano
-  const countif = (r) => '=' + MESES.map(({ abrev }) => {
+  const countif = (r) => MESES.map(({ abrev }) => {
     const aba = `${abrev}/${ANO}`;
     return `IFERROR(COUNTIF('${aba}'!C$${LOG_ROW}:C;A${r});0)`;
   }).join('+');
@@ -711,7 +711,7 @@ function criarAbaDividas() {
   // Fórmulas automáticas
   for (let r = 3; r <= 100; r++) {
     sheet.getRange(r, 4).setFormula(`=IF(AND(B${r}<>"";C${r}<>"");B${r}/C${r};"")`);
-    sheet.getRange(r, 6).setFormula(`=IF(A${r}="";"";\n${countif(r)})`);
+    sheet.getRange(r, 6).setFormula(`=IF(A${r}="";"";${countif(r)})`);
     sheet.getRange(r, 7).setFormula(`=IF(AND(C${r}<>"";F${r}<>"");C${r}-F${r};"")`);
     sheet.getRange(r, 8).setFormula(`=IF(AND(D${r}<>"";G${r}<>"");D${r}*G${r};"")`);
   }

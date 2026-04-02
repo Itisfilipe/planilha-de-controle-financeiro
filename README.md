@@ -35,10 +35,11 @@ Edite os arrays `CAT_ENTRADA` e `CAT_SAIDA` no topo do script. Depois:
 | Você preenche | Calculado automaticamente |
 |---------------|--------------------------|
 | **Descrição** — ex: "Geladeira Nubank" | **Valor mensal** = Valor total ÷ Parcelas |
-| **Valor total** — ex: R$ 3.600 | **Restantes** = Parcelas − Parcelas pagas |
-| **Parcelas** — ex: 12 | **Saldo devedor** = Valor mensal × Restantes |
-| **Início** — ex: Jan/2026 | |
-| **Parcelas pagas** — atualize todo mês | |
+| **Valor total** — ex: R$ 3.600 | **Parcelas pagas** = contagem automática de pagamentos no log |
+| **Parcelas** — ex: 12 | **Restantes** = Parcelas − Parcelas pagas |
+| **Início** — ex: Jan/2026 | **Saldo devedor** = Valor mensal × Restantes |
+
+A descrição da dívida vira automaticamente uma **categoria no dropdown** do log mensal. Ao lançar um pagamento com essa categoria, "Parcelas pagas" atualiza sozinho.
 
 A linha de **Totais** no final mostra o compromisso mensal total e o saldo devedor total. Colunas em cinza contêm fórmulas — não edite.
 
@@ -86,7 +87,7 @@ A linha de **Totais** no final mostra o compromisso mensal total e o saldo deved
 | Fechar mês | Bloqueia a aba mensal contra edição acidental (aba fica verde) |
 | Reabrir mês | Desbloqueia a aba mensal para edição novamente |
 | Criar / atualizar aba Dívidas | Cria ou atualiza a aba de acompanhamento de parcelas e financiamentos |
-| Instruções de uso | Exibe as instruções de preenchimento |
+| Como usar (abrir aba) | Abre a aba "Como usar" com instruções completas |
 
 ## Como preencher
 
@@ -107,7 +108,7 @@ A categoria selecionada direciona o valor automaticamente para a seção correta
 - **Rendimento do mês** (seção Investimentos, coluna C): ganho ou perda com investimentos no mês
 
 ### Dívidas e parcelas
-Use **Financeiro > Criar / atualizar aba Dívidas**. Funciona igual à versão simples — preencha Descrição, Valor total, Parcelas, Início e Parcelas pagas. O sistema calcula valor mensal, restantes e saldo devedor. Veja a tabela detalhada na seção da versão simples acima.
+Use **Financeiro > Criar / atualizar aba Dívidas**. Funciona igual à versão simples — preencha Descrição, Valor total, Parcelas e Início. Parcelas pagas são contadas automaticamente a partir do log mensal. Veja a tabela detalhada na seção da versão simples acima.
 
 ### Células em cinza
 Contêm fórmulas automáticas — não edite. Um aviso de confirmação aparece se você tentar.

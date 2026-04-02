@@ -533,7 +533,7 @@ function criarAbaDividas() {
 
   // Fórmula COUNTIF: conta pagamentos no log de todos os meses
   const ano = new Date().getFullYear();
-  const countif = (r) => '=' + MESES.map(({ abrev }) => {
+  const countif = (r) => MESES.map(({ abrev }) => {
     const aba = `${abrev}/${ano}`;
     return `IFERROR(COUNTIF('${aba}'!C$${LOG_ROW}:C;A${r});0)`;
   }).join('+');
@@ -543,7 +543,7 @@ function criarAbaDividas() {
     // D = Valor mensal = Valor total / Parcelas
     sheet.getRange(r, 4).setFormula(`=IF(AND(B${r}<>"";C${r}<>"");B${r}/C${r};"")`);
     // F = Parcelas pagas = contagem automática no log de todos os meses
-    sheet.getRange(r, 6).setFormula(`=IF(A${r}="";"";\n${countif(r)})`);
+    sheet.getRange(r, 6).setFormula(`=IF(A${r}="";"";${countif(r)})`);
     // G = Restantes = Parcelas - Pagas
     sheet.getRange(r, 7).setFormula(`=IF(AND(C${r}<>"";F${r}<>"");C${r}-F${r};"")`);
     // H = Saldo devedor = Valor mensal * Restantes
